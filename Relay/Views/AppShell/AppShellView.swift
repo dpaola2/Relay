@@ -3,9 +3,8 @@
 //  Relay
 //
 //  Root navigation shell — a four-tab TabView. Now is the default tab so the
-//  app opens directly on the logging screen (PRD NAV-002 / NAV-003). Tab
-//  bodies are M2 placeholders; feature views replace them in M3 (Now) and
-//  M4 (Timeline, Totals, Edit).
+//  app opens directly on the logging screen (PRD NAV-002 / NAV-003). All four
+//  tabs now mount their real screens (NAV-001).
 //
 
 import SwiftUI
@@ -17,24 +16,14 @@ struct AppShellView: View {
                 NowView()
             }
             Tab("Timeline", systemImage: "chart.bar.fill") {
-                PlaceholderTab(title: "Timeline")
+                TimelineView()
             }
             Tab("Totals", systemImage: "sum") {
-                PlaceholderTab(title: "Totals")
+                TotalsView()
             }
             Tab("Edit", systemImage: "pencil") {
-                PlaceholderTab(title: "Edit")
+                EditView()
             }
         }
-    }
-}
-
-private struct PlaceholderTab: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.largeTitle)
-            .foregroundStyle(.secondary)
     }
 }

@@ -19,7 +19,7 @@ struct ActiveSessionsBanner: View {
             EmptyActiveSessionsRow()
         } else {
             VStack(spacing: 8) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { context in
                     VStack(spacing: 8) {
                         ForEach(sessions, id: \.id) { session in
                             ActiveSessionRow(session: session, asOf: context.date)

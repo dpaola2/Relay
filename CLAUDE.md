@@ -119,6 +119,7 @@ Pattern that works:
 - Existential metatype syntax: `(any Protocol).Type`, not `any Protocol.Type`.
 - **`ModelContext` is not `Sendable`.** A concrete store conforming to a `Sendable` protocol (e.g. `SleepSessionStore`) must declare `@unchecked Sendable` and treat the context as single-threaded. Revisit when SwiftData ships a `Sendable` `ModelContext`.
 - **`EnvironmentKey`/`EnvironmentValues` live in SwiftUI, not Foundation.** Keep SwiftUI environment seams in their own `Foo+Environment.swift` file that imports SwiftUI. Putting them inside a `nonisolated` service file that only imports Foundation/SwiftData fails to compile and forces a SwiftUI dependency on a non-UI type.
+- **Avoid shadowing SwiftUI types in your module.** Naming an app-level view `TimelineView` shadows `SwiftUI.TimelineView` inside Relay, breaking any in-module call site that uses the unqualified name. If you must reuse the name, qualify the framework reference: `SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { ... }`. Same idea applies to `Color`, `Image`, `Text`, etc. — pick a distinctive app name (`AppTimelineView`) or qualify the framework call.
 
 ### 7. UX for the half-asleep operator
 
