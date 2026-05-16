@@ -394,8 +394,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(SRCROOT)/RelayTests/Support/*",
-					"$(SRCROOT)/RelayTests/ViewModels/*",
+					"$(SRCROOT)/RelayTests/Support/QASeedTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/TimelineViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/TotalsViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/EditViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/EmptyStateAndEdgeTests.swift",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
@@ -420,8 +423,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(SRCROOT)/RelayTests/Support/*",
-					"$(SRCROOT)/RelayTests/ViewModels/*",
+					"$(SRCROOT)/RelayTests/Support/QASeedTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/TimelineViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/TotalsViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/EditViewModelTests.swift",
+					"$(SRCROOT)/RelayTests/ViewModels/EmptyStateAndEdgeTests.swift",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;

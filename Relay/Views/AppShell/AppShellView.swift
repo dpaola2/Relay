@@ -14,7 +14,7 @@ struct AppShellView: View {
     var body: some View {
         TabView {
             Tab("Now", systemImage: "moon.fill") {
-                PlaceholderTab(title: "Now")
+                NowView()
             }
             Tab("Timeline", systemImage: "chart.bar.fill") {
                 PlaceholderTab(title: "Timeline")
