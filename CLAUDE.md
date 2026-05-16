@@ -117,6 +117,8 @@ Pattern that works:
 - View models also use `nonisolated`: `@Observable nonisolated final class FooViewModel`.
 - Mocks that conform to app protocols use `@unchecked Sendable`.
 - Existential metatype syntax: `(any Protocol).Type`, not `any Protocol.Type`.
+- **`ModelContext` is not `Sendable`.** A concrete store conforming to a `Sendable` protocol (e.g. `SleepSessionStore`) must declare `@unchecked Sendable` and treat the context as single-threaded. Revisit when SwiftData ships a `Sendable` `ModelContext`.
+- **`EnvironmentKey`/`EnvironmentValues` live in SwiftUI, not Foundation.** Keep SwiftUI environment seams in their own `Foo+Environment.swift` file that imports SwiftUI. Putting them inside a `nonisolated` service file that only imports Foundation/SwiftData fails to compile and forces a SwiftUI dependency on a non-UI type.
 
 ### 7. UX for the half-asleep operator
 
