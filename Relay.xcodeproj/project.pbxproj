@@ -394,7 +394,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(SRCROOT)/RelayTests/Support/QASeedTests.swift",
 					"$(SRCROOT)/RelayTests/ViewModels/EmptyStateAndEdgeTests.swift",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
@@ -420,7 +419,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"$(SRCROOT)/RelayTests/Support/QASeedTests.swift",
 					"$(SRCROOT)/RelayTests/ViewModels/EmptyStateAndEdgeTests.swift",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
