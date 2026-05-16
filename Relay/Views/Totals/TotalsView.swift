@@ -64,8 +64,12 @@ private struct PersonTotalsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(person.displayName)
-                .font(.title2.weight(.semibold))
+            HStack {
+                Text(person.displayName)
+                    .font(.title2.weight(.semibold))
+                Spacer()
+                SleepDebtBadge(person: person, viewModel: viewModel)
+            }
             ForEach(windows, id: \.label) { window in
                 TotalsRow(
                     label: window.label,
