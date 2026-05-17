@@ -123,15 +123,20 @@ nonisolated final class AddPastSleepViewModel {
     /// Persist a closed `SleepSession` via the two-call pattern. No-op when
     /// `validationError != nil` (defensive belt-and-suspenders — Save is
     /// disabled in the UI, but the VM does not assume that).
+    ///
+    /// Whitespace-only notes are normalized to `nil` so the persisted row
+    /// matches a Now-captured session that was never tapped through the note
+    /// field (STO-002 — schema-identical).
     func save() throws {
         guard validationError == nil else { return }
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let session = try store.startSession(for: who, at: startedAt)
         try store.update(
             session,
             startedAt: nil,
             endedAt: .some(endedAt),
             who: nil,
-            note: note.isEmpty ? nil : .some(note)
+            note: trimmed.isEmpty ? nil : .some(trimmed)
         )
     }
 }

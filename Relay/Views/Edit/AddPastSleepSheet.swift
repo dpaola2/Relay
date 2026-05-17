@@ -142,8 +142,12 @@ private struct DurationSection: View {
                     .foregroundStyle(.secondary)
             }
             if let validationMessage {
+                // `.red` is system-adaptive (UIColor.systemRed) and reads
+                // legibly in both light and dark mode against the form's
+                // grouped-background. Bumped to `.footnote.weight(.medium)`
+                // for half-asleep-operator contrast at 3 AM (RELAY-2 / M4).
                 Text(validationMessage)
-                    .font(.footnote)
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(.red)
             }
         }

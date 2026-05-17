@@ -31,10 +31,13 @@ struct AppShellView: View {
             }
         }
         #if DEBUG
-        .overlay(alignment: .topTrailing) {
+        // Anchored top-LEADING so the floating menu never collides with the
+        // Edit tab's top-trailing `+` toolbar button (RELAY-2 / M4 polish).
+        // No tab uses a top-leading toolbar item, so this corner is always free.
+        .overlay(alignment: .topLeading) {
             QADebugMenu()
                 .padding(.top, 8)
-                .padding(.trailing, 12)
+                .padding(.leading, 12)
         }
         #endif
     }
