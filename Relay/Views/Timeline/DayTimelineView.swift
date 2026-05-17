@@ -26,8 +26,11 @@ struct DayTimelineView: View {
     @State private var forecastVM: ForecastViewModel?
     @State private var forecastStore: (any ProposedShiftStore)?
     @State private var feedCadence = FeedCadenceSettings()
+    @State private var firstRunFlag = ForecastFirstRunFlag()
     @State private var selectedDay: Date = Date.startOfToday()
     @State private var showingSettings = false
+    @State private var showingWhy = false
+    @State private var showingAddPast = false
 
     var body: some View {
         NavigationStack {
@@ -39,8 +42,11 @@ struct DayTimelineView: View {
                         forecastVM: forecastVM,
                         forecastStore: forecastStore,
                         feedCadence: feedCadence,
+                        firstRunFlag: firstRunFlag,
                         selectedDay: $selectedDay,
-                        showingSettings: $showingSettings
+                        showingSettings: $showingSettings,
+                        showingWhy: $showingWhy,
+                        showingAddPast: $showingAddPast
                     )
                 } else {
                     Color.relayInk
@@ -61,7 +67,6 @@ struct DayTimelineView: View {
             let sessionStore = SwiftDataSleepSessionStore(context: modelContext)
             let proposedStore = SwiftDataProposedShiftStore(context: modelContext)
             let timeline = TimelineViewModel(store: sessionStore, clock: SystemClock())
-            let firstRunFlag = ForecastFirstRunFlag()
             let forecast = ForecastViewModel(
                 engine: ForecastEngine(),
                 store: proposedStore,
@@ -91,32 +96,60 @@ private struct DayTimelineContent: View {
     let forecastVM: ForecastViewModel
     let forecastStore: any ProposedShiftStore
     let feedCadence: FeedCadenceSettings
+    let firstRunFlag: ForecastFirstRunFlag
     @Binding var selectedDay: Date
     @Binding var showingSettings: Bool
+    @Binding var showingWhy: Bool
+    @Binding var showingAddPast: Bool
 
     var body: some View {
         let isToday = Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today)
-        DayBody(
-            slices: timelineVM.slices(for: selectedDay),
-            color: timelineVM.color(for:),
-            editVM: editVM,
-            forecastVM: forecastVM,
-            forecastStore: forecastStore,
-            feedCadence: feedCadence,
-            isToday: isToday,
-            selectedDay: selectedDay
-        )
+        let blocks = forecastVM.renderableBlocks(forPlanDay: selectedDay)
+        let showFirstRun = isToday
+            && !blocks.isEmpty
+            && ForecastFirstRunCard.shouldRender(flag: firstRunFlag)
+
+        VStack(spacing: 0) {
+            if showFirstRun {
+                ForecastFirstRunCard(onDismiss: {
+                    forecastVM.dismissFirstRunCard()
+                })
+            }
+            DayBody(
+                slices: timelineVM.slices(for: selectedDay),
+                color: timelineVM.color(for:),
+                editVM: editVM,
+                forecastVM: forecastVM,
+                forecastStore: forecastStore,
+                feedCadence: feedCadence,
+                blocks: blocks,
+                isToday: isToday,
+                selectedDay: selectedDay,
+                onAddPast: { showingAddPast = true }
+            )
+        }
         .gesture(swipeGesture)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color.relayInk, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .tint(Color.relayTerracotta)
-        .toolbar { toolbarContent }
+        .toolbar { toolbarContent(blocks: blocks, isToday: isToday) }
         .sheet(isPresented: $showingSettings) {
-            // Placeholder — M8 replaces this body with `FeedCadenceSettingsSheet`.
-            Text("Feed cadence settings (coming in M8)")
-                .padding()
+            FeedCadenceSettingsSheet(settings: feedCadence)
+        }
+        .sheet(isPresented: $showingWhy) {
+            WhyThisSplitSheet(
+                deficitLine: WhyThisSplitSheet.deficitLine(
+                    daveDeficit48h: deficit48h(for: .dave),
+                    bethanyDeficit48h: deficit48h(for: .bethany)
+                ),
+                onAdjust: { showingWhy = false },
+                onDismiss: { showingWhy = false }
+            )
+        }
+        .sheet(isPresented: $showingAddPast) {
+            AddPastSleepSheet()
         }
         .onChange(of: selectedDay) { _, newDay in
             forecastVM.refresh(forPlanDay: newDay)
@@ -124,8 +157,31 @@ private struct DayTimelineContent: View {
         }
     }
 
+    /// 48h deficit in seconds for `person`, derived from the cached
+    /// `TimelineViewModel.sessions` (which already covers the trailing 7 days
+    /// per RELAY-4). Mirrors the 24h overlap math from
+    /// `TimelineViewModel+DeficitProviding.swift` but widens the window.
+    private func deficit48h(for person: Person) -> TimeInterval {
+        let now = Date()
+        let window: TimeInterval = 48 * 3_600
+        let windowStart = now.addingTimeInterval(-window)
+        var actual: TimeInterval = 0
+        for session in timelineVM.sessions where session.who == person {
+            let rawEnd = session.endedAt ?? now
+            let lower = max(session.startedAt, windowStart)
+            let upper = min(rawEnd, now)
+            guard lower < upper else { continue }
+            actual += upper.timeIntervalSince(lower)
+        }
+        let target: TimeInterval = 8 * 3_600 * 2  // 8h × 2 days
+        return max(0, target - actual)
+    }
+
     @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
+    private func toolbarContent(
+        blocks: [ForecastViewModel.RenderableBlock],
+        isToday: Bool
+    ) -> some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
             Button {
                 selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
@@ -142,9 +198,9 @@ private struct DayTimelineContent: View {
                 .foregroundStyle(Color.relayCream)
         }
 
-        // Chevron declared BEFORE the gear so SwiftUI renders the chevron as
-        // the rightmost on-screen item and the gear sits to its left (M6 agent
-        // hand-off).
+        // Visual order on screen, right-to-left: chevron → gear → ⓘ → re-propose.
+        // SwiftUI renders trailing items in source order so we declare the
+        // chevron FIRST and the conditional re-propose LAST.
         ToolbarItem(placement: .navigationBarTrailing) {
             Button {
                 selectedDay = nextDay(after: selectedDay, clampedTo: timelineVM.today)
@@ -161,6 +217,29 @@ private struct DayTimelineContent: View {
             } label: {
                 Image(systemName: "gear")
                     .accessibilityLabel("Feed cadence settings")
+            }
+        }
+
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button {
+                showingWhy = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .accessibilityLabel("Why this split")
+            }
+        }
+
+        // ADJ-006 — re-propose is visible ONLY when at least one
+        // ProposedShift for the selected day is manually overridden. Tapping
+        // clears all override flags for the day and re-runs the engine.
+        if isToday && blocks.contains(where: { $0.manuallyOverridden }) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    forecastVM.resetOverrides(forPlanDay: selectedDay)
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .accessibilityLabel("Re-propose tonight's split")
+                }
             }
         }
     }
@@ -194,8 +273,10 @@ private struct DayBody: View {
     let forecastVM: ForecastViewModel
     let forecastStore: any ProposedShiftStore
     let feedCadence: FeedCadenceSettings
+    let blocks: [ForecastViewModel.RenderableBlock]
     let isToday: Bool
     let selectedDay: Date
+    let onAddPast: () -> Void
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -212,8 +293,10 @@ private struct DayBody: View {
                         editVM: editVM,
                         forecastVM: forecastVM,
                         forecastStore: forecastStore,
+                        blocks: blocks,
                         isToday: isToday,
-                        selectedDay: selectedDay
+                        selectedDay: selectedDay,
+                        onAddPast: onAddPast
                     )
                 }
                 .frame(height: TimelineMetrics.dayHeight)
@@ -322,8 +405,10 @@ private struct LaneArea: View {
     let editVM: EditViewModel
     let forecastVM: ForecastViewModel
     let forecastStore: any ProposedShiftStore
+    let blocks: [ForecastViewModel.RenderableBlock]
     let isToday: Bool
     let selectedDay: Date
+    let onAddPast: () -> Void
 
     var body: some View {
         GeometryReader { geo in
@@ -347,7 +432,6 @@ private struct LaneArea: View {
                     editVM: editVM
                 )
                 if isToday {
-                    let blocks = forecastVM.renderableBlocks(forPlanDay: slices.day)
                     if !blocks.isEmpty {
                         ForecastOverlayView(
                             blocks: blocks,
@@ -363,6 +447,10 @@ private struct LaneArea: View {
                                 )
                             }
                         )
+                    } else {
+                        ForecastEmptyState(onAddPast: onAddPast)
+                            .frame(width: geo.size.width)
+                            .position(x: geo.size.width / 2, y: TimelineMetrics.dayHeight / 2)
                     }
                     NowLine(dayStart: slices.day, totalWidth: geo.size.width)
                 }

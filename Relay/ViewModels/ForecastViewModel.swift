@@ -252,4 +252,32 @@ nonisolated final class ForecastViewModel {
     func dismissFirstRunCard() {
         firstRunFlag.dismissed = true
     }
+
+    // MARK: - Re-propose (ADJ-006)
+
+    /// Whether any row for `planDay` is manually overridden. Used by the
+    /// Timeline toolbar to gate the visibility of the "re-propose" button —
+    /// when nothing is overridden, the engine output is already what's on
+    /// screen and the button would be a no-op (gameplan §M8 ADJ-006).
+    func hasManualOverrides(forPlanDay planDay: Date) -> Bool {
+        let rows = (try? store.shifts(forPlanDay: planDay)) ?? []
+        return rows.contains(where: { $0.manuallyOverridden })
+    }
+
+    /// Clears `manuallyOverridden` on every row for `planDay` and re-runs the
+    /// engine. Rows that were overridden get reclaimed as engine proposals (or
+    /// deleted as stale if the engine no longer proposes them at that slot).
+    /// ADJ-006.
+    func resetOverrides(forPlanDay planDay: Date) {
+        let rows = (try? store.shifts(forPlanDay: planDay)) ?? []
+        for row in rows where row.manuallyOverridden {
+            _ = try? store.upsert(
+                planDay: planDay,
+                startedAt: row.startedAt,
+                who: row.who,
+                manuallyOverridden: false
+            )
+        }
+        refresh(forPlanDay: planDay)
+    }
 }
