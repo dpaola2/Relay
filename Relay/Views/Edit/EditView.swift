@@ -42,6 +42,8 @@ struct EditView: View {
 private struct EditContent: View {
     let viewModel: EditViewModel
 
+    @State private var showingAddSheet = false
+
     var body: some View {
         NavigationStack {
             Group {
@@ -52,6 +54,19 @@ private struct EditContent: View {
                 }
             }
             .navigationTitle("Last 7 days")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .accessibilityLabel("Add past sleep")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAddSheet) {
+                AddPastSleepSheet()
+            }
         }
     }
 }
