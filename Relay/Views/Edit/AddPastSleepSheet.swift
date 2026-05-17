@@ -94,7 +94,7 @@ private struct AddPastSleepForm: View {
             NoteSection(note: $viewModel.note)
             if let saveErrorMessage {
                 Section {
-                    Text(saveErrorMessage).foregroundStyle(.red)
+                    Text(saveErrorMessage).foregroundStyle(Color.relayDeepTerracotta)
                 }
             }
         }
@@ -142,13 +142,13 @@ private struct DurationSection: View {
                     .foregroundStyle(.secondary)
             }
             if let validationMessage {
-                // `.red` is system-adaptive (UIColor.systemRed) and reads
-                // legibly in both light and dark mode against the form's
-                // grouped-background. Bumped to `.footnote.weight(.medium)`
+                // Validation copy uses `.relayDeepTerracotta` per RELAY-3 —
+                // the palette has no red, so deep terracotta carries the
+                // alarm/error signal. Bumped to `.footnote.weight(.medium)`
                 // for half-asleep-operator contrast at 3 AM (RELAY-2 / M4).
                 Text(validationMessage)
                     .font(.footnote.weight(.medium))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.relayDeepTerracotta)
             }
         }
     }

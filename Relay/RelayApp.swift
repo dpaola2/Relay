@@ -27,6 +27,9 @@ struct RelayApp: App {
         WindowGroup {
             AppShellView()
                 .preferredColorScheme(.dark)
+                .tint(.relayTerracotta)
+                .foregroundStyle(Color.relayCream, Color.relaySoftCream)
+                .background(Color.relayInk.ignoresSafeArea())
         }
         .modelContainer(sharedModelContainer)
     }

@@ -31,7 +31,7 @@ struct SleepDebtBadge: View {
         )
         HStack(spacing: 8) {
             Image(systemName: debt > 0 ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
-                .foregroundStyle(debt > 0 ? Color.orange : Color.green)
+                .foregroundStyle(debt > 0 ? Color.relayDeepTerracotta : Color.relayCream)
             Text(label(for: debt))
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)

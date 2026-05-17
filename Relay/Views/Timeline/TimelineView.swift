@@ -75,7 +75,7 @@ private struct TimelineBand: View {
         ZStack(alignment: .topLeading) {
             // Background — day color
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.secondary.opacity(0.10))
+                .fill(Color.relayCream.opacity(0.08))
             // Night-shading bands
             ForEach(Array(viewModel.nightBands.enumerated()), id: \.offset) { _, band in
                 NightBandView(
@@ -108,7 +108,7 @@ private struct NightBandView: View {
         let offset = CGFloat(band.start.timeIntervalSince(windowStart)) / 3_600 * pointsPerHour
         let width = CGFloat(band.end.timeIntervalSince(band.start)) / 3_600 * pointsPerHour
         return RoundedRectangle(cornerRadius: 6)
-            .fill(Color.black.opacity(0.30))
+            .fill(Color.relayInk.opacity(0.45))
             .frame(width: max(0, width), height: 180)
             .offset(x: offset)
     }

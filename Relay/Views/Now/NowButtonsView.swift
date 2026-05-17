@@ -51,7 +51,7 @@ private struct NowPrimaryButton: View {
             }
             .frame(maxWidth: .infinity, minHeight: 72)
             .foregroundStyle(.primary)
-            .background(Color.secondary.opacity(0.2), in: RoundedRectangle(cornerRadius: 16))
+            .background(Color.relayCream.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())

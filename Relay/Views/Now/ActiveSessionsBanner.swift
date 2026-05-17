@@ -47,7 +47,7 @@ private struct ActiveSessionRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.relayCream.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func elapsedString(from interval: TimeInterval) -> String {

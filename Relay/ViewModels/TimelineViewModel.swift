@@ -67,12 +67,12 @@ nonisolated final class TimelineViewModel {
         session.endedAt ?? clock.now
     }
 
-    /// Stable, distinct color per person (TML-002). Hue values chosen for dark
-    /// mode contrast; the view binds to these directly.
+    /// Stable, distinct color per person (TML-002). Sourced from the Relay
+    /// palette so per-person identity stays in lockstep with the rest of the UI.
     func color(for person: Person) -> Color {
         switch person {
-        case .dave: return Color(red: 0.40, green: 0.65, blue: 1.00)
-        case .bethany: return Color(red: 1.00, green: 0.55, blue: 0.75)
+        case .dave: return .relayTerracotta
+        case .bethany: return .relaySoftPeach
         }
     }
 

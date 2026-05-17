@@ -81,7 +81,7 @@ private struct PersonTotalsCard: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.relayCream.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
