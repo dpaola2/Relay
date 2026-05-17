@@ -49,7 +49,7 @@ final class AddPastSleepViewModelTests: XCTestCase {
     // A deterministic anchor: 2026-05-16 at 14:00 UTC. We choose a UTC calendar
     // throughout so "yesterday 11pm → today 7am" tests don't drift on the CI
     // machine's local TZ.
-    private let now = Date(timeIntervalSince1970: 1_779_278_400)
+    private let now = Date(timeIntervalSince1970: 1_778_940_000)
 
     private var utcCalendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
