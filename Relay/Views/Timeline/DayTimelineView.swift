@@ -60,19 +60,44 @@ private struct DayTimelineContent: View {
     @Binding var selectedDay: Date
 
     var body: some View {
-        VStack(spacing: 0) {
-            DayHeader(
-                selectedDay: $selectedDay,
-                earliest: timelineVM.earliestSelectableDay,
-                latest: timelineVM.today
-            )
-            DayBody(
-                slices: timelineVM.slices(for: selectedDay),
-                color: timelineVM.color(for:),
-                editVM: editVM,
-                isToday: Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today)
-            )
-            .gesture(swipeGesture)
+        DayBody(
+            slices: timelineVM.slices(for: selectedDay),
+            color: timelineVM.color(for:),
+            editVM: editVM,
+            isToday: Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today)
+        )
+        .gesture(swipeGesture)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color.relayInk, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .tint(Color.relayTerracotta)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .accessibilityLabel("Previous day")
+                }
+                .disabled(Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.earliestSelectableDay))
+            }
+
+            ToolbarItem(placement: .principal) {
+                Text(selectedDay, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                    .font(.headline)
+                    .foregroundStyle(Color.relayCream)
+            }
+
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    selectedDay = nextDay(after: selectedDay, clampedTo: timelineVM.today)
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .accessibilityLabel("Next day")
+                }
+                .disabled(Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today))
+            }
         }
     }
 
@@ -89,44 +114,6 @@ private struct DayTimelineContent: View {
                     selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
                 }
             }
-    }
-}
-
-// MARK: - Day header (date + chevrons)
-
-private struct DayHeader: View {
-    @Binding var selectedDay: Date
-    let earliest: Date
-    let latest: Date
-
-    var body: some View {
-        HStack {
-            Button {
-                selectedDay = previousDay(before: selectedDay, clampedTo: earliest)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .accessibilityLabel("Previous day")
-            }
-            .disabled(Calendar.current.isDate(selectedDay, inSameDayAs: earliest))
-
-            Spacer()
-            Text(selectedDay, format: .dateTime.weekday(.wide).month(.abbreviated).day())
-                .font(.headline)
-                .foregroundStyle(Color.relayCream)
-            Spacer()
-
-            Button {
-                selectedDay = nextDay(after: selectedDay, clampedTo: latest)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .accessibilityLabel("Next day")
-            }
-            .disabled(Calendar.current.isDate(selectedDay, inSameDayAs: latest))
-        }
-        .tint(Color.relayTerracotta)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(Color.relayInk)
     }
 }
 
