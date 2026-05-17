@@ -21,7 +21,7 @@ struct AppShellView: View {
                 NowView()
             }
             Tab("Timeline", systemImage: "chart.bar.fill") {
-                TimelineView()
+                DayTimelineView()
             }
             Tab("Totals", systemImage: "sum") {
                 TotalsView()

@@ -50,14 +50,15 @@ final class EmptyStateAndEdgeTests: XCTestCase {
         XCTAssertTrue(sut.activeSessions.isEmpty, "Idle Now-screen state: no active sessions")
     }
 
-    // MARK: - EMPTY-timeline (also asserted in TimelineViewModelTests)
+    // MARK: - EMPTY-timeline (also asserted in TimelineDayViewModelTests)
 
-    func test_timelineViewModel_emptyWindow_hasShading() {
+    func test_timelineViewModel_emptyDay_returnsEmptySlices() {
         let sut = TimelineViewModel(store: store, clock: clock)
         sut.refresh()
 
-        XCTAssertTrue(sut.sessions.isEmpty)
-        XCTAssertFalse(sut.nightBands.isEmpty, "Empty timeline still renders day/night shading")
+        let slices = sut.slices(for: sut.today)
+        XCTAssertTrue(slices.dave.isEmpty)
+        XCTAssertTrue(slices.bethany.isEmpty)
     }
 
     // MARK: - EMPTY-totals
@@ -81,19 +82,22 @@ final class EmptyStateAndEdgeTests: XCTestCase {
         XCTAssertTrue(sut.sessions.isEmpty, "Empty 7-day window: empty list (not error)")
     }
 
-    // MARK: - Relaunch-after-72h: Timeline only last 72h; Edit still shows last 7d
+    // MARK: - 5-day-old session: Day view shows it on its day; Edit still shows it
 
-    func test_relaunchAfter72h_timeline_excludesOldSessions_butEdit_stillIncludesThem() throws {
-        // Session 5 days old — outside Timeline's 72h, INSIDE Edit's 7 days.
+    func test_fiveDayOldSession_appearsOnItsDay_andOnEdit() throws {
+        // RELAY-4: Day view exposes the trailing 7-day window (matches ADR-003).
+        // A 5-day-old session must therefore be visible on the day it occurred.
         let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-5 * day))
         try store.endSession(s, at: now.addingTimeInterval(-5 * day + hour))
 
         let timeline = TimelineViewModel(store: store, clock: clock)
         timeline.refresh()
-        XCTAssertTrue(timeline.sessions.isEmpty, "Session >72h old must NOT appear on Timeline")
+        let fiveDaysAgo = Calendar.current.startOfDay(for: now.addingTimeInterval(-5 * day))
+        let slices = timeline.slices(for: fiveDaysAgo)
+        XCTAssertEqual(slices.dave.count, 1, "5-day-old session appears on its calendar day")
 
         let edit = EditViewModel(store: store, clock: clock)
         edit.refresh()
-        XCTAssertEqual(edit.sessions.count, 1, "Same session DOES appear on Edit (7-day window)")
+        XCTAssertEqual(edit.sessions.count, 1, "Same session also appears on Edit (7-day window)")
     }
 }
