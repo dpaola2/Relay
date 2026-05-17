@@ -51,13 +51,17 @@ private struct ActiveSessionRow: View {
     }
 
     private func elapsedString(from interval: TimeInterval) -> String {
-        let total = Int(interval)
+        let total = max(0, Int(interval))
         let hours = total / 3_600
         let minutes = (total % 3_600) / 60
+        let seconds = total % 60
         if hours > 0 {
-            return "\(hours)h \(minutes)m"
+            return "\(hours)h \(minutes)m \(seconds)s"
         }
-        return "\(minutes)m"
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        }
+        return "\(seconds)s"
     }
 }
 
