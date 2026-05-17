@@ -13,6 +13,7 @@ struct RelayApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             SleepSession.self,
+            ProposedShift.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
