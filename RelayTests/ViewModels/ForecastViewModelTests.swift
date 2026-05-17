@@ -317,6 +317,31 @@ final class ForecastViewModelTests: XCTestCase {
             "EDG-002: empty-lane parent (Bethany fully depleted) gets larger block"
         )
     }
+
+    // MARK: - First-run card dismiss observability (regression)
+
+    /// Regression for the bug where tapping "Got it" on the first-run card
+    /// persisted the dismiss to UserDefaults but didn't re-render the view —
+    /// `shouldShowFirstRunCard` was reading directly from the UserDefaults-backed
+    /// flag, which `@Observable` cannot track. The fix mirrors the flag in a
+    /// stored property the macro instruments.
+    func test_dismissFirstRunCard_notifiesObservers() {
+        let expectation = expectation(description: "shouldShowFirstRunCard observer fires")
+
+        withObservationTracking {
+            _ = sut.shouldShowFirstRunCard
+        } onChange: {
+            expectation.fulfill()
+        }
+
+        sut.dismissFirstRunCard()
+
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertFalse(
+            sut.shouldShowFirstRunCard,
+            "After dismissFirstRunCard(), shouldShowFirstRunCard must be false"
+        )
+    }
 }
 
 // MARK: - Stub deficit provider

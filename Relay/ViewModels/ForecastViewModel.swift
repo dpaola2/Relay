@@ -63,6 +63,13 @@ nonisolated final class ForecastViewModel {
     /// The planDay the active observers are scoped to. nil when not observing.
     private var observedPlanDay: Date?
 
+    /// Observable mirror of `firstRunFlag.dismissed`. The flag lives in
+    /// UserDefaults, which `@Observable` can't track — so SwiftUI needs a
+    /// stored property here to know when `shouldShowFirstRunCard` flips.
+    /// Initialized from the flag at construction; written by
+    /// `dismissFirstRunCard()` in tandem with the persisted flag.
+    private var firstRunCardDismissed: Bool
+
     // MARK: - Init
 
     init(
@@ -79,6 +86,7 @@ nonisolated final class ForecastViewModel {
         self.clock = clock
         self.calendar = calendar
         self.firstRunFlag = firstRunFlag
+        self.firstRunCardDismissed = firstRunFlag.dismissed
     }
 
     deinit {
@@ -243,13 +251,17 @@ nonisolated final class ForecastViewModel {
     // MARK: - Derived state for the first-run philosophy card
 
     /// Whether the one-time first-run philosophy card should be visible.
-    /// `false` once the user dismisses it (PHL-005 / PHL-006).
+    /// `false` once the user dismisses it (PHL-005 / PHL-006). Reads from the
+    /// observable stored mirror so SwiftUI re-renders on dismiss.
     var shouldShowFirstRunCard: Bool {
-        !firstRunFlag.dismissed
+        !firstRunCardDismissed
     }
 
     /// Marks the card dismissed. Idempotent — the flag is a one-way latch.
+    /// Writes the observable mirror first so SwiftUI re-renders, then the
+    /// persisted flag so the dismiss survives relaunch.
     func dismissFirstRunCard() {
+        firstRunCardDismissed = true
         firstRunFlag.dismissed = true
     }
 
