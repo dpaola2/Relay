@@ -564,6 +564,7 @@ private struct NowLine: View {
                 .frame(width: totalWidth, height: 1.5)
                 .offset(y: y)
                 .id(nowAnchorID)
+                .accessibilityHidden(true)
         }
     }
 }

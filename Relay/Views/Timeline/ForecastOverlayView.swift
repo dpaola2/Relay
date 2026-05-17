@@ -122,9 +122,16 @@ private struct TapCell: View {
                 .frame(width: laneWidth, height: TimelineMetrics.halfHourHeight)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(
-            "Cycle shift assignment at \(timeLabel) (\(who.displayName) lane)"
-        ))
+        .accessibilityLabel(Text(accessibilityLabel(for: who)))
+        .accessibilityHint(Text("Tap to change."))
+    }
+
+    /// Composes a VoiceOver-friendly description of the half-hour cell. Includes
+    /// the time, lane, and current engine proposal (or "unassigned") so the
+    /// user knows what the cell currently represents before tapping to cycle.
+    private func accessibilityLabel(for who: Person) -> String {
+        let proposed = engineProposal(at: startedAt).map { $0.displayName } ?? "unassigned"
+        return "\(timeLabel) — \(who.displayName) lane, proposed for \(proposed)"
     }
 
     /// The current engine proposal for `startedAt` — derived from the

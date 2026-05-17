@@ -76,9 +76,11 @@ struct WhyThisSplitSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(Self.gotItActionLabel) { onDismiss() }
+                        .accessibilityLabel("Dismiss Why this split sheet")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(Self.adjustActionLabel) { onAdjust() }
+                        .accessibilityLabel("Adjust tonight's split")
                 }
             }
         }

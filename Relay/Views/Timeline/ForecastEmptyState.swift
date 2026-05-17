@@ -55,6 +55,8 @@ struct ForecastEmptyState: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Self.primaryActionLabel)
+            .accessibilityHint("Opens the backfill sheet to enter the last two days of sleep.")
 
             Text(Self.secondaryLineCopy)
                 .font(.footnote)

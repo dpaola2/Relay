@@ -61,6 +61,7 @@ struct ForecastFirstRunCard: View {
                     .buttonStyle(.borderedProminent)
                     .tint(Color.relayTerracotta)
                     .foregroundStyle(Color.relayInk)
+                    .accessibilityLabel("Dismiss starting-place note")
             }
         }
         .padding(14)
