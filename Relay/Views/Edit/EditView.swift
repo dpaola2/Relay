@@ -29,10 +29,12 @@ struct EditView: View {
         .task {
             if viewModel == nil {
                 let store = SwiftDataSleepSessionStore(context: modelContext)
-                let vm = EditViewModel(store: store, clock: SystemClock())
-                vm.refresh()
-                viewModel = vm
+                viewModel = EditViewModel(store: store, clock: SystemClock())
             }
+            viewModel?.refresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .sleepSessionsDidChange)) { _ in
+            viewModel?.refresh()
         }
     }
 }

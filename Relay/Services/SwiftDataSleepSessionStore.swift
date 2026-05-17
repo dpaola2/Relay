@@ -10,6 +10,13 @@
 import Foundation
 import SwiftData
 
+extension Notification.Name {
+    /// Posted after any successful write (`save` or `delete`). View models
+    /// observe this to re-read their cached projections so seed/wipe and
+    /// cross-tab mutations are reflected without a tab teardown.
+    static let sleepSessionsDidChange = Notification.Name("relay.sleepSessionsDidChange")
+}
+
 /// `@unchecked Sendable` because `ModelContext` is not yet `Sendable`-conforming.
 /// Used from a single context at a time in v1 (app thread or test thread), so the
 /// unchecked promise holds. Revisit when SwiftData ships proper Sendable support.
@@ -18,6 +25,10 @@ nonisolated final class SwiftDataSleepSessionStore: SleepSessionStore, @unchecke
 
     init(context: ModelContext) {
         self.context = context
+    }
+
+    private func notifyDidChange() {
+        NotificationCenter.default.post(name: .sleepSessionsDidChange, object: nil)
     }
 
     // MARK: - Reads
@@ -56,6 +67,7 @@ nonisolated final class SwiftDataSleepSessionStore: SleepSessionStore, @unchecke
         let session = SleepSession(who: who, startedAt: startedAt)
         context.insert(session)
         try context.save()
+        notifyDidChange()
         return session
     }
 
@@ -66,6 +78,7 @@ nonisolated final class SwiftDataSleepSessionStore: SleepSessionStore, @unchecke
         session.endedAt = endedAt
         session.updatedAt = endedAt
         try context.save()
+        notifyDidChange()
     }
 
     func update(
@@ -93,10 +106,12 @@ nonisolated final class SwiftDataSleepSessionStore: SleepSessionStore, @unchecke
         if let outer = note { session.note = outer }
         session.updatedAt = .now
         try context.save()
+        notifyDidChange()
     }
 
     func delete(_ session: SleepSession) throws {
         context.delete(session)
         try context.save()
+        notifyDidChange()
     }
 }

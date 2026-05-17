@@ -29,10 +29,12 @@ struct TimelineView: View {
         .task {
             if viewModel == nil {
                 let store = SwiftDataSleepSessionStore(context: modelContext)
-                let vm = TimelineViewModel(store: store, clock: SystemClock())
-                vm.refresh()
-                viewModel = vm
+                viewModel = TimelineViewModel(store: store, clock: SystemClock())
             }
+            viewModel?.refresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .sleepSessionsDidChange)) { _ in
+            viewModel?.refresh()
         }
     }
 }
