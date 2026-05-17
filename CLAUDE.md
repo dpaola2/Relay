@@ -117,6 +117,9 @@ Pattern that works:
 - View models also use `nonisolated`: `@Observable nonisolated final class FooViewModel`.
 - Mocks that conform to app protocols use `@unchecked Sendable`.
 - Existential metatype syntax: `(any Protocol).Type`, not `any Protocol.Type`.
+- **`ModelContext` is not `Sendable`.** A concrete store conforming to a `Sendable` protocol (e.g. `SleepSessionStore`) must declare `@unchecked Sendable` and treat the context as single-threaded. Revisit when SwiftData ships a `Sendable` `ModelContext`.
+- **`EnvironmentKey`/`EnvironmentValues` live in SwiftUI, not Foundation.** Keep SwiftUI environment seams in their own `Foo+Environment.swift` file that imports SwiftUI. Putting them inside a `nonisolated` service file that only imports Foundation/SwiftData fails to compile and forces a SwiftUI dependency on a non-UI type.
+- **Avoid shadowing SwiftUI types in your module.** Naming an app-level view `TimelineView` shadows `SwiftUI.TimelineView` inside Relay, breaking any in-module call site that uses the unqualified name. If you must reuse the name, qualify the framework reference: `SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { ... }`. Same idea applies to `Color`, `Image`, `Text`, etc. — pick a distinctive app name (`AppTimelineView`) or qualify the framework call.
 
 ### 7. UX for the half-asleep operator
 
@@ -255,6 +258,7 @@ If any of the below is requested, push back or surface a trade-off first:
 | **Project shape** | Do NOT relax the founding constraints in §"Project Shape" (single-player, no backend, no HealthKit, no notifications, one entity, sideload). Surface the trade-off first. |
 | **Actor isolation** | Test target MUST NOT inherit `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. Service protocols and view models use `nonisolated`. Mocks use `@unchecked Sendable`. |
 | **Schema registration** | Every new `@Model` must be added to the `Schema` array in `RelayApp.swift`. |
+| **Test-target file inclusion** | `RelayTests/` is a `PBXFileSystemSynchronizedRootGroup` like `Relay/` — adding a `.swift` under it auto-includes it. Per-milestone gating uses `EXCLUDED_SOURCE_FILE_NAMES` (glob form `$(SRCROOT)/RelayTests/<subdir>/*`) in the `RelayTests` target's build settings. M1 excludes `Mocks/`, `Models/`, `Services/`, `Support/`, `ViewModels/`; each subsequent milestone removes the relevant entry. Editing this list is the unblock when a new test file refuses to compile. |
 
 ### Post-Flight Checks
 

@@ -12,7 +12,7 @@ import SwiftData
 struct RelayApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            SleepSession.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +25,8 @@ struct RelayApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppShellView()
+                .preferredColorScheme(.dark)
         }
         .modelContainer(sharedModelContainer)
     }
