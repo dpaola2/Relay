@@ -40,12 +40,32 @@ struct QASeed {
     /// Prints a one-shot summary to the Xcode console (QA-seed-5).
     func seed(store: SleepSessionStore, clock: any Clock) throws {
         try wipe(store: store)
+        try applyPlans(scenarioPlans(now: clock.now), to: store, now: clock.now)
+    }
 
-        let now = clock.now
+    /// Wipe-then-seed the store with the Backfill (RELAY-2 / M3) fixture set.
+    /// Exercises the v1.1 Backfill UX surface: outside-7d rows (VAL-002),
+    /// a within-24h Dave anchor (DEF-001 sticky), and per-person within-7d
+    /// coverage for Totals. Same idempotency contract as `seed(store:clock:)`.
+    func seedBackfillCoverage(store: SleepSessionStore, clock: any Clock) throws {
+        try wipe(store: store)
+        try applyPlans(backfillCoveragePlans(now: clock.now), to: store, now: clock.now)
+    }
+
+    // MARK: - Plan application
+
+    /// Walk a plan list and write each row via the canonical two-call path
+    /// (`startSession` + `update(endedAt:..., note:...)`). Prints a one-shot
+    /// summary so the Xcode console shows what landed.
+    private func applyPlans(
+        _ plans: [ScenarioPlan],
+        to store: SleepSessionStore,
+        now: Date
+    ) throws {
         var scenarios: [String] = []
         var created: [SleepSession] = []
 
-        for plan in scenarioPlans(now: now) {
+        for plan in plans {
             let session = try store.startSession(for: plan.who, at: plan.startedAt)
             try store.update(
                 session,
@@ -159,6 +179,83 @@ struct QASeed {
                 startedAt: now.addingTimeInterval(-20 * 60),
                 endedAt: nil,
                 note: nil
+            ),
+        ]
+    }
+
+    /// Backfill (RELAY-2 / M3) plan set. Tighter and more focused than the
+    /// canonical `seed` — covers exactly the surfaces the Backfill sheet
+    /// touches: VAL-002 (outside-7d rows), DEF-001 sticky-Who anchor, and
+    /// Totals reach (≥2 within-7d rows per person).
+    private func backfillCoveragePlans(now: Date) -> [ScenarioPlan] {
+        let hour: TimeInterval = 3_600
+        let day: TimeInterval = 24 * hour
+
+        return [
+            // --- VAL-002 reach: two rows OLDER than 7d (must NOT show in Edit) ---
+            ScenarioPlan(
+                scenario: "backfill/outside-7d-dave-9-days-old",
+                who: .dave,
+                startedAt: now.addingTimeInterval(-9 * day),
+                endedAt: now.addingTimeInterval(-9 * day + 6 * hour),
+                note: nil
+            ),
+            ScenarioPlan(
+                scenario: "backfill/outside-7d-bethany-10-days-old",
+                who: .bethany,
+                startedAt: now.addingTimeInterval(-10 * day),
+                endedAt: now.addingTimeInterval(-10 * day + 5 * hour),
+                note: nil
+            ),
+
+            // --- Totals reach: ≥2 within-7d per person ---
+            ScenarioPlan(
+                scenario: "backfill/within-7d-dave-6-days-old",
+                who: .dave,
+                startedAt: now.addingTimeInterval(-6 * day),
+                endedAt: now.addingTimeInterval(-6 * day + 7 * hour),
+                note: nil
+            ),
+            ScenarioPlan(
+                scenario: "backfill/within-7d-bethany-6-days-old",
+                who: .bethany,
+                startedAt: now.addingTimeInterval(-6 * day + hour),
+                endedAt: now.addingTimeInterval(-6 * day + 7 * hour),
+                note: nil
+            ),
+            ScenarioPlan(
+                scenario: "backfill/within-7d-dave-3-days-old",
+                who: .dave,
+                startedAt: now.addingTimeInterval(-3 * day),
+                endedAt: now.addingTimeInterval(-3 * day + 7 * hour),
+                note: "Long stretch — Jo slept through."
+            ),
+            ScenarioPlan(
+                scenario: "backfill/within-7d-bethany-3-days-old",
+                who: .bethany,
+                startedAt: now.addingTimeInterval(-3 * day + 30 * 60),
+                endedAt: now.addingTimeInterval(-3 * day + 5 * hour),
+                note: nil
+            ),
+
+            // --- 24h-to-7d band: a Bethany row JUST outside the sticky window
+            //     (between 24h and 48h) so the within-24h selector still picks
+            //     the Dave anchor below. ---
+            ScenarioPlan(
+                scenario: "backfill/within-7d-bethany-36-hours-old",
+                who: .bethany,
+                startedAt: now.addingTimeInterval(-36 * hour),
+                endedAt: now.addingTimeInterval(-28 * hour),
+                note: nil
+            ),
+
+            // --- DEF-001 sticky anchor: latest-startedAt within 24h is Dave ---
+            ScenarioPlan(
+                scenario: "backfill/within-24h-dave-sticky-anchor",
+                who: .dave,
+                startedAt: now.addingTimeInterval(-3 * hour),
+                endedAt: now.addingTimeInterval(-1 * hour),
+                note: "Pre-dawn shift — sticky-Who anchor."
             ),
         ]
     }

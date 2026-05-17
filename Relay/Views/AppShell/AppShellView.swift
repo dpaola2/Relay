@@ -58,6 +58,9 @@ private struct QADebugMenu: View {
             Button("Seed sample data", systemImage: "tray.and.arrow.down") {
                 runSeed()
             }
+            Button("Seed backfill coverage", systemImage: "clock.arrow.circlepath") {
+                runSeedBackfillCoverage()
+            }
             Button("Wipe all data", systemImage: "trash", role: .destructive) {
                 showWipeConfirmation = true
             }
@@ -87,6 +90,15 @@ private struct QADebugMenu: View {
             try QASeed().seed(store: store, clock: SystemClock())
         } catch {
             print("[QASeed] Seed failed: \(error)")
+        }
+    }
+
+    private func runSeedBackfillCoverage() {
+        let store = SwiftDataSleepSessionStore(context: modelContext)
+        do {
+            try QASeed().seedBackfillCoverage(store: store, clock: SystemClock())
+        } catch {
+            print("[QASeed] Backfill seed failed: \(error)")
         }
     }
 
