@@ -2,11 +2,9 @@
 //  TimelineViewModel.swift
 //  Relay
 //
-//  The Timeline-screen view model (Arch §3.3 / gameplan M4). Exposes a 72h
-//  window relative to `clock.now`, the sessions that overlap it, a stable
-//  per-person color identity, an "effective end" derivation so open sessions
-//  render extending to `clock.now`, and the day/night shading bands the view
-//  paints behind the session blocks.
+//  Backs the vertical Day-view Timeline (RELAY-4). Caches sessions across a
+//  7-day window so the view can slice them per displayed calendar day without
+//  re-hitting the store on every swipe.
 //
 //  Per ADR-002 / CLAUDE.md §"Engineering Methodology" item 6 this is
 //  `@Observable nonisolated final class` so test mocks can drive it across
@@ -19,20 +17,39 @@ import SwiftUI
 
 @Observable
 nonisolated final class TimelineViewModel {
-    /// A day/night shading band — a closed interval in absolute time. The view
-    /// paints these as the timeline background; the view model derives them so
-    /// the math is testable without a SwiftUI view tree.
-    struct NightBand: Equatable, Sendable {
-        let start: Date
-        let end: Date
+
+    /// One render-ready slice of a `SleepSession` clipped to a single calendar
+    /// day's [00:00, 24:00) window. A session that spans midnight produces TWO
+    /// slices (one per day) that share the same `sessionID` but get distinct
+    /// `id`s so SwiftUI ForEach treats them as separate rows.
+    struct DaySlice: Identifiable {
+        let id: String
+        let sessionID: UUID
+        let session: SleepSession
+        let who: Person
+        let visibleStart: Date
+        let visibleEnd: Date
+        /// Full duration of the underlying session (not the slice). Each slice
+        /// reports the whole session's length so a spanning session reads as
+        /// "5h" on both sides of midnight, not "2h" + "3h".
+        let fullDuration: TimeInterval
+        let isOpen: Bool
+    }
+
+    /// Per-person lanes for one calendar day, in chronological order.
+    struct DaySlices {
+        let day: Date
+        let dave: [DaySlice]
+        let bethany: [DaySlice]
     }
 
     private let store: any SleepSessionStore
     private let clock: any Clock
     private let calendar: Calendar
 
-    /// Sessions overlapping the 72h window, sorted oldest-first. Driven by
-    /// `refresh()`.
+    /// Cached sessions overlapping the last-7-days window (plus a 1-day forward
+    /// buffer so open sessions and edge clipping behave consistently). The view
+    /// observes this property — mutating it on `refresh()` triggers redraws.
     var sessions: [SleepSession] = []
 
     init(
@@ -45,79 +62,90 @@ nonisolated final class TimelineViewModel {
         self.calendar = calendar
     }
 
-    // MARK: - Window
+    // MARK: - Navigation bounds
 
-    var windowEnd: Date { clock.now }
-    var windowStart: Date { windowEnd.addingTimeInterval(-72 * 3_600) }
+    /// Start-of-day of the clock's current moment, in `calendar`'s time zone.
+    /// Day navigation is anchored here.
+    var today: Date {
+        calendar.dateInterval(of: .day, for: clock.now)?.start ?? clock.now
+    }
+
+    /// Earliest day the user may navigate to — mirrors ADR-003's 7-day Edit
+    /// window. `today - 6 days` so the inclusive [earliest, today] range
+    /// contains exactly 7 calendar days.
+    var earliestSelectableDay: Date {
+        calendar.date(byAdding: .day, value: -6, to: today) ?? today
+    }
 
     // MARK: - Refresh
 
-    /// Re-read sessions overlapping the 72h window from the store. Called by
-    /// the view on appear.
+    /// Re-read the 7-day window into `sessions`. Called by the view on appear
+    /// and on the cross-tab `.sleepSessionsDidChange` notification.
     func refresh() {
-        let range = windowStart...windowEnd
-        sessions = (try? store.sessions(in: range)) ?? []
+        let lower = calendar.date(byAdding: .day, value: -7, to: clock.now) ?? clock.now
+        let upper = calendar.date(byAdding: .day, value: 1, to: clock.now) ?? clock.now
+        sessions = (try? store.sessions(in: lower...upper)) ?? []
     }
 
-    // MARK: - Derivations
+    // MARK: - Per-day slicing
 
-    /// For rendering — closed sessions return their `endedAt`, open sessions
-    /// return `clock.now` (TML-005).
-    func effectiveEnd(of session: SleepSession) -> Date {
-        session.endedAt ?? clock.now
+    /// Per-person session slices for the calendar day containing `day`. Slices
+    /// are clipped to `[dayStart, dayEnd)`; open sessions clip to
+    /// `min(clock.now, dayEnd)` so a still-running session on a past day stops
+    /// at that day's midnight rather than bleeding forward.
+    func slices(for day: Date) -> DaySlices {
+        guard let interval = calendar.dateInterval(of: .day, for: day) else {
+            return DaySlices(day: day, dave: [], bethany: [])
+        }
+        let dayStart = interval.start
+        let dayEnd = interval.end
+        let dayKey = Int(dayStart.timeIntervalSince1970)
+
+        var dave: [DaySlice] = []
+        var bethany: [DaySlice] = []
+
+        for session in sessions {
+            let rawEnd = session.endedAt ?? clock.now
+            let visibleStart = max(session.startedAt, dayStart)
+            let visibleEnd = min(rawEnd, dayEnd)
+            guard visibleStart < visibleEnd else { continue }
+
+            let slice = DaySlice(
+                id: "\(session.id.uuidString)-\(dayKey)",
+                sessionID: session.id,
+                session: session,
+                who: session.who,
+                visibleStart: visibleStart,
+                visibleEnd: visibleEnd,
+                fullDuration: session.duration(asOf: clock.now),
+                isOpen: session.isOpen
+            )
+            switch session.who {
+            case .dave: dave.append(slice)
+            case .bethany: bethany.append(slice)
+            }
+        }
+
+        dave.sort { $0.visibleStart < $1.visibleStart }
+        bethany.sort { $0.visibleStart < $1.visibleStart }
+        return DaySlices(day: dayStart, dave: dave, bethany: bethany)
     }
 
-    /// Stable, distinct color per person (TML-002). Sourced from the Relay
-    /// palette so per-person identity stays in lockstep with the rest of the UI.
+    /// The current moment if it falls inside `day`'s calendar window. Used by
+    /// the view to draw a "now" indicator line — nil suppresses the line.
+    func nowAnchor(in day: Date) -> Date? {
+        guard let interval = calendar.dateInterval(of: .day, for: day) else { return nil }
+        return interval.contains(clock.now) ? clock.now : nil
+    }
+
+    // MARK: - Color identity
+
+    /// Stable per-person color sourced from the Relay palette. Kept on the VM
+    /// so the view doesn't reach into palette tokens directly.
     func color(for person: Person) -> Color {
         switch person {
         case .dave: return .relayTerracotta
         case .bethany: return .relaySoftPeach
         }
-    }
-
-    /// Night-shading bands across the 72h window (TML-003). Each band runs
-    /// from 22:00 to 06:00 local time on each day the window touches, clipped
-    /// to `[windowStart, windowEnd]`.
-    var nightBands: [NightBand] {
-        var bands: [NightBand] = []
-        let start = windowStart
-        let end = windowEnd
-
-        // Walk back to the start-of-day containing windowStart, then step
-        // forward day-by-day generating a (22:00 prev-day → 06:00 this-day)
-        // band for each calendar day in the window.
-        guard let firstDay = calendar.dateInterval(of: .day, for: start)?.start else {
-            return []
-        }
-        var dayCursor = firstDay
-        let oneDay: TimeInterval = 24 * 3_600
-        // Add one extra day of slack on either side so a band that begins the
-        // previous evening can still be emitted for the first day in window.
-        let stopAt = end.addingTimeInterval(oneDay)
-        while dayCursor <= stopAt {
-            if let band = nightBand(forDayStartingAt: dayCursor, clippedTo: start...end) {
-                bands.append(band)
-            }
-            dayCursor = dayCursor.addingTimeInterval(oneDay)
-        }
-        return bands
-    }
-
-    // MARK: - Private
-
-    /// Builds the band for the night that begins at 22:00 of the calendar day
-    /// previous to `dayStart` and ends at 06:00 of `dayStart`. Returns nil if
-    /// the band doesn't intersect the window.
-    private func nightBand(
-        forDayStartingAt dayStart: Date,
-        clippedTo window: ClosedRange<Date>
-    ) -> NightBand? {
-        let nightStart = dayStart.addingTimeInterval(-2 * 3_600)   // previous day 22:00
-        let nightEnd = dayStart.addingTimeInterval(6 * 3_600)      // this day 06:00
-        let clippedStart = max(nightStart, window.lowerBound)
-        let clippedEnd = min(nightEnd, window.upperBound)
-        guard clippedStart < clippedEnd else { return nil }
-        return NightBand(start: clippedStart, end: clippedEnd)
     }
 }
