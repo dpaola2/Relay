@@ -17,6 +17,7 @@ import SwiftData
 
 struct NowView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.widgetRefresher) private var widgetRefresher
 
     @State private var viewModel: NowViewModel?
     @State private var haptics: Haptics = Self.makeHaptics()
@@ -34,7 +35,7 @@ struct NowView: View {
         .padding(20)
         .task {
             if viewModel == nil {
-                let store = SwiftDataSleepSessionStore(context: modelContext)
+                let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
                 viewModel = NowViewModel(store: store, clock: SystemClock())
             }
             viewModel?.refresh()

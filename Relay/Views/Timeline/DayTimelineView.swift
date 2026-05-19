@@ -17,6 +17,7 @@ import SwiftData
 
 struct DayTimelineView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.widgetRefresher) private var widgetRefresher
 
     @State private var timelineVM: TimelineViewModel?
     @State private var editVM: EditViewModel?
@@ -46,7 +47,7 @@ struct DayTimelineView: View {
 
     private func bootstrap() async {
         if timelineVM == nil {
-            let sessionStore = SwiftDataSleepSessionStore(context: modelContext)
+            let sessionStore = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
             timelineVM = TimelineViewModel(store: sessionStore, clock: SystemClock())
             editVM = EditViewModel(store: sessionStore, clock: SystemClock())
         }

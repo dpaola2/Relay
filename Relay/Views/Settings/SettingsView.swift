@@ -14,6 +14,7 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.widgetRefresher) private var widgetRefresher
     @State private var showWipeConfirmation = false
 
     var body: some View {
@@ -54,7 +55,7 @@ struct SettingsView: View {
     }
 
     private func runSeed() {
-        let store = SwiftDataSleepSessionStore(context: modelContext)
+        let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
         do {
             try QASeed().seed(store: store, clock: SystemClock())
         } catch {
@@ -63,7 +64,7 @@ struct SettingsView: View {
     }
 
     private func runSeedBackfillCoverage() {
-        let store = SwiftDataSleepSessionStore(context: modelContext)
+        let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
         do {
             try QASeed().seedBackfillCoverage(store: store, clock: SystemClock())
         } catch {
@@ -72,7 +73,7 @@ struct SettingsView: View {
     }
 
     private func runWipe() {
-        let store = SwiftDataSleepSessionStore(context: modelContext)
+        let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
         do {
             try QASeed().wipe(store: store)
             print("[QASeed] Wiped all sessions.")

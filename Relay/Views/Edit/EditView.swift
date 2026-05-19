@@ -15,6 +15,7 @@ import SwiftData
 
 struct EditView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.widgetRefresher) private var widgetRefresher
 
     @State private var viewModel: EditViewModel?
 
@@ -28,7 +29,7 @@ struct EditView: View {
         }
         .task {
             if viewModel == nil {
-                let store = SwiftDataSleepSessionStore(context: modelContext)
+                let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
                 viewModel = EditViewModel(store: store, clock: SystemClock())
             }
             viewModel?.refresh()

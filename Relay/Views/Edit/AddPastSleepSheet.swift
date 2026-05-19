@@ -25,6 +25,7 @@ import SwiftData
 
 struct AddPastSleepSheet: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.widgetRefresher) private var widgetRefresher
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: AddPastSleepViewModel?
@@ -48,7 +49,7 @@ struct AddPastSleepSheet: View {
         }
         .task {
             if viewModel == nil {
-                let store = SwiftDataSleepSessionStore(context: modelContext)
+                let store = SwiftDataSleepSessionStore(context: modelContext, widgetRefresher: widgetRefresher)
                 viewModel = AddPastSleepViewModel(store: store, clock: SystemClock())
             }
         }

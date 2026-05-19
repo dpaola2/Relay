@@ -6,7 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		559B8F112FBCC33A00AD643E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 559B8F102FBCC33A00AD643E /* WidgetKit.framework */; };
+		559B8F132FBCC33B00AD643E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 559B8F122FBCC33B00AD643E /* SwiftUI.framework */; };
+		559B8F202FBCC33C00AD643E /* RelayWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 559B8F0E2FBCC33A00AD643E /* RelayWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		559B8F1E2FBCC33C00AD643E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 559B856D2FB8F58E00AD643E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 559B8F0D2FBCC33A00AD643E;
+			remoteInfo = RelayWidgetExtension;
+		};
 		7A1100330033003300330033 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 559B856D2FB8F58E00AD643E /* Project object */;
@@ -16,15 +29,51 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		559B8F212FBCC33C00AD643E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				559B8F202FBCC33C00AD643E /* RelayWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		559B85752FB8F58F00AD643E /* Relay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Relay.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		559B8F0E2FBCC33A00AD643E /* RelayWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RelayWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		559B8F102FBCC33A00AD643E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		559B8F122FBCC33B00AD643E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		559B8F272FBCC39500AD643E /* RelayWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RelayWidgetExtension.entitlements; sourceTree = "<group>"; };
 		7A11A001A001A001A001A001 /* RelayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RelayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		559B8F242FBCC33C00AD643E /* Exceptions for "RelayWidget" folder in "RelayWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 559B8F0D2FBCC33A00AD643E /* RelayWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		559B85772FB8F58F00AD643E /* Relay */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Relay;
+			sourceTree = "<group>";
+		};
+		559B8F142FBCC33B00AD643E /* RelayWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				559B8F242FBCC33C00AD643E /* Exceptions for "RelayWidget" folder in "RelayWidgetExtension" target */,
+			);
+			path = RelayWidget;
 			sourceTree = "<group>";
 		};
 		7A11B001B001B001B001B001 /* RelayTests */ = {
@@ -42,6 +91,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		559B8F0B2FBCC33A00AD643E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				559B8F132FBCC33B00AD643E /* SwiftUI.framework in Frameworks */,
+				559B8F112FBCC33A00AD643E /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7A11C001C001C001C001C001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -55,8 +113,11 @@
 		559B856C2FB8F58E00AD643E = {
 			isa = PBXGroup;
 			children = (
+				559B8F272FBCC39500AD643E /* RelayWidgetExtension.entitlements */,
 				559B85772FB8F58F00AD643E /* Relay */,
 				7A11B001B001B001B001B001 /* RelayTests */,
+				559B8F142FBCC33B00AD643E /* RelayWidget */,
+				559B8F0F2FBCC33A00AD643E /* Frameworks */,
 				559B85762FB8F58F00AD643E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -66,8 +127,18 @@
 			children = (
 				559B85752FB8F58F00AD643E /* Relay.app */,
 				7A11A001A001A001A001A001 /* RelayTests.xctest */,
+				559B8F0E2FBCC33A00AD643E /* RelayWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		559B8F0F2FBCC33A00AD643E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				559B8F102FBCC33A00AD643E /* WidgetKit.framework */,
+				559B8F122FBCC33B00AD643E /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -80,10 +151,12 @@
 				559B85712FB8F58F00AD643E /* Sources */,
 				559B85722FB8F58F00AD643E /* Frameworks */,
 				559B85732FB8F58F00AD643E /* Resources */,
+				559B8F212FBCC33C00AD643E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				559B8F1F2FBCC33C00AD643E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				559B85772FB8F58F00AD643E /* Relay */,
@@ -94,6 +167,28 @@
 			productName = Relay;
 			productReference = 559B85752FB8F58F00AD643E /* Relay.app */;
 			productType = "com.apple.product-type.application";
+		};
+		559B8F0D2FBCC33A00AD643E /* RelayWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 559B8F252FBCC33C00AD643E /* Build configuration list for PBXNativeTarget "RelayWidgetExtension" */;
+			buildPhases = (
+				559B8F0A2FBCC33A00AD643E /* Sources */,
+				559B8F0B2FBCC33A00AD643E /* Frameworks */,
+				559B8F0C2FBCC33A00AD643E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				559B8F142FBCC33B00AD643E /* RelayWidget */,
+			);
+			name = RelayWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = RelayWidgetExtension;
+			productReference = 559B8F0E2FBCC33A00AD643E /* RelayWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		7A11D001D001D001D001D001 /* RelayTests */ = {
 			isa = PBXNativeTarget;
@@ -131,6 +226,9 @@
 					559B85742FB8F58F00AD643E = {
 						CreatedOnToolsVersion = 26.5;
 					};
+					559B8F0D2FBCC33A00AD643E = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					7A11D001D001D001D001D001 = {
 						CreatedOnToolsVersion = 26.5;
 						TestTargetID = 559B85742FB8F58F00AD643E;
@@ -153,12 +251,20 @@
 			targets = (
 				559B85742FB8F58F00AD643E /* Relay */,
 				7A11D001D001D001D001D001 /* RelayTests */,
+				559B8F0D2FBCC33A00AD643E /* RelayWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		559B85732FB8F58F00AD643E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		559B8F0C2FBCC33A00AD643E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -182,6 +288,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		559B8F0A2FBCC33A00AD643E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7A11F001F001F001F001F001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -192,6 +305,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		559B8F1F2FBCC33C00AD643E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 559B8F0D2FBCC33A00AD643E /* RelayWidgetExtension */;
+			targetProxy = 559B8F1E2FBCC33C00AD643E /* PBXContainerItemProxy */;
+		};
 		7A1100220022002200220022 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 559B85742FB8F58F00AD643E /* Relay */;
@@ -326,8 +444,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Relay/Relay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -340,7 +459,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.Relay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -358,8 +477,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Relay/Relay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -372,12 +492,74 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.Relay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		559B8F222FBCC33C00AD643E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = RelayWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 8;
+				DEVELOPMENT_TEAM = MHJW9PMHE4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RelayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RelayWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.Relay.RelayWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		559B8F232FBCC33C00AD643E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = RelayWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 8;
+				DEVELOPMENT_TEAM = MHJW9PMHE4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RelayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RelayWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.Relay.RelayWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -391,11 +573,11 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.RelayTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -413,11 +595,11 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = MHJW9PMHE4;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.davepaola.RelayTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -446,6 +628,15 @@
 			buildConfigurations = (
 				559B85832FB8F59000AD643E /* Debug */,
 				559B85842FB8F59000AD643E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		559B8F252FBCC33C00AD643E /* Build configuration list for PBXNativeTarget "RelayWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				559B8F222FBCC33C00AD643E /* Debug */,
+				559B8F232FBCC33C00AD643E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
