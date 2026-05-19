@@ -168,4 +168,68 @@ final class TotalsViewModelTests: XCTestCase {
 
         XCTAssertEqual(debt, 0, accuracy: 1.0, "Meeting target means no debt (not negative)")
     }
+
+    // MARK: - RELAY-9: signed sleep balance (actual − target)
+    //
+    // The widget renders surplus AND deficit (target met = "0",
+    // deficit = "−Xh Ym", surplus = "+Xh Ym"), so the underlying math
+    // must expose a signed value. `sleepDebt` stays as the floored
+    // convenience for the in-app badge (debt is never negative there).
+
+    func test_sleepBalance_isNegative_whenActualBelowTarget() throws {
+        // Dave slept 4h. Target 8h. Balance = 4h − 8h = −4h.
+        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-5 * hour))
+        try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
+
+        sut.refresh()
+        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+
+        XCTAssertEqual(balance, -4 * hour, accuracy: 1.0)
+    }
+
+    func test_sleepBalance_isZero_whenActualMeetsTargetExactly() throws {
+        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-9 * hour))
+        try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
+
+        sut.refresh()
+        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+
+        XCTAssertEqual(balance, 0, accuracy: 1.0, "Exactly on target reads as zero")
+    }
+
+    func test_sleepBalance_isPositive_whenActualExceedsTarget() throws {
+        // Dave slept 9h. Target 8h. Balance = +1h.
+        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-10 * hour))
+        try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
+
+        sut.refresh()
+        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+
+        XCTAssertEqual(balance, 1 * hour, accuracy: 1.0)
+    }
+
+    func test_sleepBalance_scalesTarget_byWindowProportionally() throws {
+        // Over 48h with an 8h-per-24h target, the scaled target is 16h.
+        // Dave slept 10h within the 48h window → balance = −6h.
+        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-30 * hour))
+        try store.endSession(d, at: now.addingTimeInterval(-20 * hour))
+
+        sut.refresh()
+        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 48 * hour)
+
+        XCTAssertEqual(balance, -6 * hour, accuracy: 1.0)
+    }
+
+    func test_sleepDebt_isStill_max0_negativeBalance() throws {
+        // Surplus case: balance is +1h, but sleepDebt() must remain floored at 0.
+        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-10 * hour))
+        try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
+
+        sut.refresh()
+        let debt = sut.sleepDebt(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+
+        XCTAssertEqual(debt, 0, accuracy: 1.0, "sleepDebt is floored regardless of surplus")
+        XCTAssertGreaterThan(balance, 0, "sleepBalance preserves the surplus")
+    }
 }

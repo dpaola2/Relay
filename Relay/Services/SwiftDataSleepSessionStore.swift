@@ -22,13 +22,19 @@ extension Notification.Name {
 /// unchecked promise holds. Revisit when SwiftData ships proper Sendable support.
 nonisolated final class SwiftDataSleepSessionStore: SleepSessionStore, @unchecked Sendable {
     private let context: ModelContext
+    private let widgetRefresher: any WidgetRefreshing
 
-    init(context: ModelContext) {
+    init(
+        context: ModelContext,
+        widgetRefresher: any WidgetRefreshing = NoopWidgetRefresher()
+    ) {
         self.context = context
+        self.widgetRefresher = widgetRefresher
     }
 
     private func notifyDidChange() {
         NotificationCenter.default.post(name: .sleepSessionsDidChange, object: nil)
+        widgetRefresher.refresh()
     }
 
     // MARK: - Reads

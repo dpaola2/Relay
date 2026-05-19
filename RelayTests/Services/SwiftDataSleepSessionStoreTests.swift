@@ -175,4 +175,79 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
         XCTAssertEqual(try sut.openSession(for: .dave)?.who, .dave)
         XCTAssertEqual(try sut.openSession(for: .bethany)?.who, .bethany)
     }
+
+    // MARK: - RELAY-9: widget refresh fires after every write
+    //
+    // The widget kind that gets reloaded is irrelevant at this layer.
+    // The store's contract: any successful commit calls
+    // `WidgetRefreshing.refresh()` exactly once.
+
+    func test_startSession_callsWidgetRefresher() throws {
+        let spy = SpyWidgetRefresher()
+        let store = SwiftDataSleepSessionStore(
+            context: ModelContext(container),
+            widgetRefresher: spy
+        )
+
+        _ = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+
+        XCTAssertEqual(spy.refreshCount, 1)
+    }
+
+    func test_endSession_callsWidgetRefresher() throws {
+        let spy = SpyWidgetRefresher()
+        let store = SwiftDataSleepSessionStore(
+            context: ModelContext(container),
+            widgetRefresher: spy
+        )
+        let start = Date(timeIntervalSince1970: 1_780_000_000)
+        let session = try store.startSession(for: .dave, at: start)
+        XCTAssertEqual(spy.refreshCount, 1)
+
+        try store.endSession(session, at: start.addingTimeInterval(3_600))
+
+        XCTAssertEqual(spy.refreshCount, 2)
+    }
+
+    func test_update_callsWidgetRefresher() throws {
+        let spy = SpyWidgetRefresher()
+        let store = SwiftDataSleepSessionStore(
+            context: ModelContext(container),
+            widgetRefresher: spy
+        )
+        let start = Date(timeIntervalSince1970: 1_780_000_000)
+        let session = try store.startSession(for: .dave, at: start)
+
+        try store.update(
+            session,
+            startedAt: nil,
+            endedAt: .some(start.addingTimeInterval(3_600)),
+            who: nil,
+            note: .some("note")
+        )
+
+        XCTAssertEqual(spy.refreshCount, 2, "Start + update both refresh")
+    }
+
+    func test_delete_callsWidgetRefresher() throws {
+        let spy = SpyWidgetRefresher()
+        let store = SwiftDataSleepSessionStore(
+            context: ModelContext(container),
+            widgetRefresher: spy
+        )
+        let session = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+
+        try store.delete(session)
+
+        XCTAssertEqual(spy.refreshCount, 2)
+    }
+
+    func test_init_defaultsToNoopRefresher_andStillCommits() throws {
+        // The widget refresher has a default value so existing callers don't
+        // need to thread it through. Smoke test: the default constructor still
+        // works and writes still commit.
+        let store = SwiftDataSleepSessionStore(context: ModelContext(container))
+        let session = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+        XCTAssertNotNil(session.id)
+    }
 }

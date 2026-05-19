@@ -67,9 +67,21 @@ nonisolated final class TotalsViewModel {
         targetHoursPer24h: Double,
         window: TimeInterval
     ) -> TimeInterval {
+        max(0, -sleepBalance(for: person, targetHoursPer24h: targetHoursPer24h, window: window))
+    }
+
+    /// Signed balance: actual − target. Negative is deficit, positive is
+    /// surplus, zero is exactly on target. Used by the widget (RELAY-9) where
+    /// surplus is a real state to render; in-app the floored `sleepDebt` is
+    /// the right shape.
+    func sleepBalance(
+        for person: Person,
+        targetHoursPer24h: Double,
+        window: TimeInterval
+    ) -> TimeInterval {
         let scaledTarget = (targetHoursPer24h * 3_600) * (window / (24 * 3_600))
         let actual = total(for: person, over: window)
-        return max(0, scaledTarget - actual)
+        return actual - scaledTarget
     }
 
     // MARK: - Private
