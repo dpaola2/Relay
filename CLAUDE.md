@@ -156,12 +156,25 @@ Relay/
 
 Defer this structure until the second or third file is added — don't pre-create empty folders.
 
+## Versioning
+
+Always bump version and build numbers when shipping a feature, fix, or chore that lands on a sideload — don't wait to be asked. The two fields live in `Relay.xcodeproj/project.pbxproj`, with four occurrences each (Debug + Release for both the Relay and RelayTests targets); update all four for both fields so the app and test bundle stay in lockstep.
+
+- **`MARKETING_VERSION`** is semver. Treat the pitch's scope as the signal:
+  - **Major** (`x.0.0`) — only when an explicit project-shape change happens (e.g., adding a second device, moving off SwiftData). Never bump major as part of normal feature work.
+  - **Minor** (`1.x.0`) — a new "vN" pitch lands (RELAY-4 was v1.2, RELAY-5 was v1.3, RELAY-8 is v1.4). Anything that adds, removes, or substantially reshapes a tab/feature is minor.
+  - **Patch** (`1.4.x`) — bug fixes and small visible tweaks that don't change the feature set (typo in a label, one-line gesture tuning, a regression fix). The pitch's "v1.4.1 followup" candidates listed in rabbit holes are the canonical patch shape.
+- **`CURRENT_PROJECT_VERSION`** is the monotonic build number. Increment by exactly 1 on every bump, regardless of which semver level moved.
+- Bump together with the code change in the same commit. Don't ship two commits ("feat: …" then "chore: bump"); the version bump is part of the feature commit, not a follow-up.
+- After bumping, the next session inherits the new numbers — don't re-bump if you're just editing docs, fixing CI, or making a no-op refactor that doesn't ship behavior. The principle is "one bump per shippable change," not "one bump per commit."
+
 ## Git Discipline
 
 - **Commits reference the WCP callsign** they implement: `feat: timeline screen renders 72h band (RELAY-3)`.
 - **Run the build before committing.** A broken build wastes the next session's first 10 minutes.
 - **Don't push without explicit ask.** This repo is local-only by default.
 - **No secrets in source.** (None should exist — there's no backend.)
+- **Bump the version + build number with the change.** See §"Versioning" above. Forgetting is the second-most-common reason a sideload feels stuck on an old build.
 
 ## What's Out of Scope
 

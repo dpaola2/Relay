@@ -7,12 +7,9 @@
 //  by `startedAt` and sized by duration. Swipe or chevron to navigate days
 //  within the last 7 days (ADR-003). Tap a block → existing Edit sheet.
 //
-//  RELAY-5 (M7) — extends the lane area forward in time: dashed-bordered
-//  Forecast blocks below the now-line, half-hour tap cells that cycle the
-//  assignment, ▷ feed markers on the left rail, and a `ScrollViewReader`
-//  that pins the now-line to the centre of the viewport on appear (OQ-8).
-//
-//  Composition keeps each subview ≤ ~50 lines per Sandi Metz's view-body rule.
+//  RELAY-8 — Forecast is gone; the Day view is the lanes, the now-line, and
+//  the chevrons. A pinned legend (`LaneHeader`) sits between the toolbar and
+//  the grid so the color → person mapping is always visible.
 //
 
 import SwiftUI
@@ -23,30 +20,16 @@ struct DayTimelineView: View {
 
     @State private var timelineVM: TimelineViewModel?
     @State private var editVM: EditViewModel?
-    @State private var forecastVM: ForecastViewModel?
-    @State private var forecastStore: (any ProposedShiftStore)?
-    @State private var feedCadence = FeedCadenceSettings()
-    @State private var firstRunFlag = ForecastFirstRunFlag()
     @State private var selectedDay: Date = Date.startOfToday()
-    @State private var showingSettings = false
-    @State private var showingWhy = false
-    @State private var showingAddPast = false
 
     var body: some View {
         NavigationStack {
             Group {
-                if let timelineVM, let editVM, let forecastVM, let forecastStore {
+                if let timelineVM, let editVM {
                     DayTimelineContent(
                         timelineVM: timelineVM,
                         editVM: editVM,
-                        forecastVM: forecastVM,
-                        forecastStore: forecastStore,
-                        feedCadence: feedCadence,
-                        firstRunFlag: firstRunFlag,
-                        selectedDay: $selectedDay,
-                        showingSettings: $showingSettings,
-                        showingWhy: $showingWhy,
-                        showingAddPast: $showingAddPast
+                        selectedDay: $selectedDay
                     )
                 } else {
                     Color.relayInk
@@ -58,33 +41,18 @@ struct DayTimelineView: View {
         .onReceive(NotificationCenter.default.publisher(for: .sleepSessionsDidChange)) { _ in
             timelineVM?.refresh()
             editVM?.refresh()
-            forecastVM?.refresh(forPlanDay: selectedDay)
         }
     }
 
     private func bootstrap() async {
         if timelineVM == nil {
             let sessionStore = SwiftDataSleepSessionStore(context: modelContext)
-            let proposedStore = SwiftDataProposedShiftStore(context: modelContext)
-            let timeline = TimelineViewModel(store: sessionStore, clock: SystemClock())
-            let forecast = ForecastViewModel(
-                engine: ForecastEngine(),
-                store: proposedStore,
-                deficitProvider: timeline,
-                clock: SystemClock(),
-                calendar: .current,
-                firstRunFlag: firstRunFlag
-            )
-            timelineVM = timeline
+            timelineVM = TimelineViewModel(store: sessionStore, clock: SystemClock())
             editVM = EditViewModel(store: sessionStore, clock: SystemClock())
-            forecastStore = proposedStore
-            forecastVM = forecast
         }
         timelineVM?.refresh()
         editVM?.refresh()
         selectedDay = timelineVM?.today ?? Date.startOfToday()
-        forecastVM?.refresh(forPlanDay: selectedDay)
-        forecastVM?.beginObserving(planDay: selectedDay)
     }
 }
 
@@ -93,98 +61,32 @@ struct DayTimelineView: View {
 private struct DayTimelineContent: View {
     let timelineVM: TimelineViewModel
     let editVM: EditViewModel
-    let forecastVM: ForecastViewModel
-    let forecastStore: any ProposedShiftStore
-    let feedCadence: FeedCadenceSettings
-    let firstRunFlag: ForecastFirstRunFlag
     @Binding var selectedDay: Date
-    @Binding var showingSettings: Bool
-    @Binding var showingWhy: Bool
-    @Binding var showingAddPast: Bool
 
     var body: some View {
-        let isToday = Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today)
-        let blocks = forecastVM.renderableBlocks(forPlanDay: selectedDay)
-        let showFirstRun = isToday
-            && !blocks.isEmpty
-            && ForecastFirstRunCard.shouldRender(flag: firstRunFlag)
-
         VStack(spacing: 0) {
-            if showFirstRun {
-                ForecastFirstRunCard(onDismiss: {
-                    forecastVM.dismissFirstRunCard()
-                })
-            }
+            LaneHeader(color: timelineVM.color(for:))
             DayBody(
                 slices: timelineVM.slices(for: selectedDay),
                 color: timelineVM.color(for:),
                 editVM: editVM,
-                forecastVM: forecastVM,
-                forecastStore: forecastStore,
-                feedCadence: feedCadence,
-                blocks: blocks,
-                isToday: isToday,
-                selectedDay: selectedDay,
-                onAddPast: { showingAddPast = true }
+                isToday: Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today)
             )
         }
-        .gesture(swipeGesture)
+        .simultaneousGesture(swipeGesture)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color.relayInk, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .tint(Color.relayTerracotta)
-        .toolbar { toolbarContent(blocks: blocks, isToday: isToday) }
-        .sheet(isPresented: $showingSettings) {
-            FeedCadenceSettingsSheet(settings: feedCadence)
-        }
-        .sheet(isPresented: $showingWhy) {
-            WhyThisSplitSheet(
-                deficitLine: WhyThisSplitSheet.deficitLine(
-                    daveDeficit48h: deficit48h(for: .dave),
-                    bethanyDeficit48h: deficit48h(for: .bethany)
-                ),
-                onAdjust: { showingWhy = false },
-                onDismiss: { showingWhy = false }
-            )
-        }
-        .sheet(isPresented: $showingAddPast) {
-            AddPastSleepSheet()
-        }
-        .onChange(of: selectedDay) { _, newDay in
-            forecastVM.refresh(forPlanDay: newDay)
-            forecastVM.beginObserving(planDay: newDay)
-        }
-    }
-
-    /// 48h deficit in seconds for `person`, derived from the cached
-    /// `TimelineViewModel.sessions` (which already covers the trailing 7 days
-    /// per RELAY-4). Mirrors the 24h overlap math from
-    /// `TimelineViewModel+DeficitProviding.swift` but widens the window.
-    private func deficit48h(for person: Person) -> TimeInterval {
-        let now = Date()
-        let window: TimeInterval = 48 * 3_600
-        let windowStart = now.addingTimeInterval(-window)
-        var actual: TimeInterval = 0
-        for session in timelineVM.sessions where session.who == person {
-            let rawEnd = session.endedAt ?? now
-            let lower = max(session.startedAt, windowStart)
-            let upper = min(rawEnd, now)
-            guard lower < upper else { continue }
-            actual += upper.timeIntervalSince(lower)
-        }
-        let target: TimeInterval = 8 * 3_600 * 2  // 8h × 2 days
-        return max(0, target - actual)
+        .toolbar { toolbarContent }
     }
 
     @ToolbarContentBuilder
-    private func toolbarContent(
-        blocks: [ForecastViewModel.RenderableBlock],
-        isToday: Bool
-    ) -> some ToolbarContent {
+    private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
             Button {
-                selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
+                stepDay(.backward)
             } label: {
                 Image(systemName: "chevron.left")
                     .accessibilityLabel("Previous day")
@@ -198,65 +100,149 @@ private struct DayTimelineContent: View {
                 .foregroundStyle(Color.relayCream)
         }
 
-        // Visual order on screen, right-to-left: chevron → gear → ⓘ → re-propose.
-        // SwiftUI renders trailing items in source order so we declare the
-        // chevron FIRST and the conditional re-propose LAST.
         ToolbarItem(placement: .navigationBarTrailing) {
             Button {
-                selectedDay = nextDay(after: selectedDay, clampedTo: timelineVM.today)
+                stepDay(.forward)
             } label: {
                 Image(systemName: "chevron.right")
                     .accessibilityLabel("Next day")
             }
             .disabled(Calendar.current.isDate(selectedDay, inSameDayAs: timelineVM.today))
         }
-
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button {
-                showingSettings = true
-            } label: {
-                Image(systemName: "gear")
-                    .accessibilityLabel("Feed cadence settings")
-            }
-        }
-
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button {
-                showingWhy = true
-            } label: {
-                Image(systemName: "info.circle")
-                    .accessibilityLabel("Why this split")
-            }
-        }
-
-        // ADJ-006 — re-propose is visible ONLY when at least one
-        // ProposedShift for the selected day is manually overridden. Tapping
-        // clears all override flags for the day and re-runs the engine.
-        if isToday && blocks.contains(where: { $0.manuallyOverridden }) {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    forecastVM.resetOverrides(forPlanDay: selectedDay)
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .accessibilityLabel("Re-propose tonight's split")
-                }
-            }
-        }
     }
 
-    /// Horizontal swipe → step day. Threshold 50pt keeps it from firing on
-    /// vertical scroll attempts. Left swipe = forward, right swipe = back.
+    /// Horizontal swipe → step day. Uses `.simultaneousGesture` so the
+    /// `ScrollView`'s vertical drag still wins for vertical motion, and the
+    /// `DayTimelineSwipe.direction(...)` helper rejects vertical-dominant
+    /// translations so a diagonal scroll doesn't get hijacked.
     private var swipeGesture: some Gesture {
         DragGesture(minimumDistance: 30)
             .onEnded { value in
-                let dx = value.translation.width
-                guard abs(dx) > 50 else { return }
-                if dx < 0 {
-                    selectedDay = nextDay(after: selectedDay, clampedTo: timelineVM.today)
-                } else {
-                    selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
+                guard let direction = DayTimelineSwipe.direction(translation: value.translation) else {
+                    return
+                }
+                withAnimation(.easeOut(duration: 0.18)) {
+                    stepDay(direction)
                 }
             }
+    }
+
+    private func stepDay(_ direction: DayTimelineSwipe.Direction) {
+        switch direction {
+        case .forward:
+            selectedDay = nextDay(after: selectedDay, clampedTo: timelineVM.today)
+        case .backward:
+            selectedDay = previousDay(before: selectedDay, clampedTo: timelineVM.earliestSelectableDay)
+        }
+    }
+}
+
+// MARK: - Lane header (color legend)
+
+/// Always-visible mapping between lane color and person. Sits above the hour
+/// grid so a half-conscious operator at 3am can tell at a glance which lane is
+/// whose without leaving the Day view.
+struct LaneHeader: View {
+    let color: (Person) -> Color
+
+    struct Entry: Equatable {
+        let person: Person
+        let label: String
+        let color: Color
+        let accessibilityLabel: String
+    }
+
+    /// Pure data seam — unit tests assert on this instead of rendering SwiftUI.
+    static func entries(color: (Person) -> Color) -> [Entry] {
+        Person.allCases
+            .sorted { $0.laneOrder < $1.laneOrder }
+            .map { person in
+                Entry(
+                    person: person,
+                    label: person.displayName,
+                    color: color(person),
+                    accessibilityLabel: "\(person.displayName)'s lane, \(person.colorName)"
+                )
+            }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Gutter spacer so the lane columns line up with the hour grid below.
+            Color.clear.frame(width: TimelineMetrics.gutterWidth)
+            ForEach(Self.entries(color: color), id: \.person) { entry in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(entry.color)
+                        .frame(width: 8, height: 8)
+                    Text(entry.label)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.relayCream)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 8)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(entry.accessibilityLabel)
+            }
+        }
+        .frame(height: 24)
+        .background(Color.relayInk)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.relaySoftCream.opacity(0.15))
+                .frame(height: 0.5)
+        }
+    }
+}
+
+private extension Person {
+    /// Stable left-to-right placement in the Day-view lanes. Lower = leftmost.
+    var laneOrder: Int {
+        switch self {
+        case .dave: return 0
+        case .bethany: return 1
+        }
+    }
+
+    /// Human-readable color name used in the legend's accessibility label.
+    /// Kept in sync with the palette tokens in `Color+Palette.swift`.
+    var colorName: String {
+        switch self {
+        case .dave: return "terracotta"
+        case .bethany: return "peach"
+        }
+    }
+}
+
+// MARK: - Swipe direction helper (pure function, unit-tested)
+
+/// Decision logic for the Day-view horizontal swipe. Extracted so
+/// `DayTimelineSwipeTests` can verify it without standing up SwiftUI gestures.
+enum DayTimelineSwipe {
+    enum Direction: Equatable {
+        case forward   // left swipe = next day
+        case backward  // right swipe = previous day
+    }
+
+    /// Minimum horizontal travel before we commit to a day step. Mirrors
+    /// `DragGesture(minimumDistance:)` but used here as the *commit* threshold,
+    /// not the *start* threshold — the gesture starts at 30, but we only step
+    /// once the user has clearly committed to horizontal motion.
+    static let horizontalThreshold: CGFloat = 30
+
+    /// Horizontal motion must dominate vertical by at least this factor or we
+    /// treat the drag as a (possibly diagonal) vertical scroll attempt and
+    /// ignore it. 1.5 is enough to disambiguate without being twitchy.
+    static let horizontalDominanceFactor: CGFloat = 1.5
+
+    /// Returns `.forward` for left swipes, `.backward` for right swipes, and
+    /// `nil` if the translation is below threshold or vertically dominant.
+    static func direction(translation: CGSize) -> Direction? {
+        let dx = translation.width
+        let dy = translation.height
+        guard abs(dx) >= horizontalThreshold else { return nil }
+        guard abs(dx) > abs(dy) * horizontalDominanceFactor else { return nil }
+        return dx < 0 ? .forward : .backward
     }
 }
 
@@ -270,33 +256,18 @@ private struct DayBody: View {
     let slices: TimelineViewModel.DaySlices
     let color: (Person) -> Color
     let editVM: EditViewModel
-    let forecastVM: ForecastViewModel
-    let forecastStore: any ProposedShiftStore
-    let feedCadence: FeedCadenceSettings
-    let blocks: [ForecastViewModel.RenderableBlock]
     let isToday: Bool
-    let selectedDay: Date
-    let onAddPast: () -> Void
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 HStack(alignment: .top, spacing: 0) {
-                    HourGutter(
-                        feedCadence: feedCadence,
-                        dayStart: slices.day,
-                        isToday: isToday
-                    )
+                    HourGutter()
                     LaneArea(
                         slices: slices,
                         color: color,
                         editVM: editVM,
-                        forecastVM: forecastVM,
-                        forecastStore: forecastStore,
-                        blocks: blocks,
-                        isToday: isToday,
-                        selectedDay: selectedDay,
-                        onAddPast: onAddPast
+                        isToday: isToday
                     )
                 }
                 .frame(height: TimelineMetrics.dayHeight)
@@ -304,7 +275,6 @@ private struct DayBody: View {
             .background(Color.relayInk)
             .onAppear {
                 guard isToday else { return }
-                // Defer one runloop tick so layout completes before we scroll.
                 DispatchQueue.main.async {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         proxy.scrollTo(nowAnchorID, anchor: .center)
@@ -315,30 +285,21 @@ private struct DayBody: View {
     }
 }
 
-// MARK: - Hour gutter + feed markers
+// MARK: - Hour gutter
 
 private struct HourGutter: View {
-    let feedCadence: FeedCadenceSettings
-    let dayStart: Date
-    let isToday: Bool
-
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            VStack(spacing: 0) {
-                ForEach(0..<24, id: \.self) { hour in
-                    HStack {
-                        Spacer()
-                        Text(hourLabel(hour))
-                            .font(.caption2)
-                            .monospacedDigit()
-                            .foregroundStyle(Color.relaySoftCream.opacity(0.7))
-                            .padding(.trailing, 6)
-                    }
-                    .frame(height: TimelineMetrics.hourRowHeight, alignment: .top)
+        VStack(spacing: 0) {
+            ForEach(0..<24, id: \.self) { hour in
+                HStack {
+                    Spacer()
+                    Text(hourLabel(hour))
+                        .font(.caption2)
+                        .monospacedDigit()
+                        .foregroundStyle(Color.relaySoftCream.opacity(0.7))
+                        .padding(.trailing, 6)
                 }
-            }
-            ForEach(feedMarkerDates, id: \.self) { markerDate in
-                FeedMarker(dayStart: dayStart, markerDate: markerDate)
+                .frame(height: TimelineMetrics.hourRowHeight, alignment: .top)
             }
         }
         .frame(width: TimelineMetrics.gutterWidth)
@@ -350,51 +311,6 @@ private struct HourGutter: View {
         let h12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
         return "\(h12)\(suffix)"
     }
-
-    /// Marker times for the visible calendar day. Projects forward AND backward
-    /// from `FeedCadenceSettings.anchorAt` at the configured cadence (FED-004),
-    /// then clips to `[dayStart, dayStart+24h)`.
-    private var feedMarkerDates: [Date] {
-        let anchor = feedCadence.anchorAt
-        let cadence = feedCadence.hours * 3_600
-        guard cadence > 0 else { return [] }
-        let dayEnd = dayStart.addingTimeInterval(24 * 3_600)
-
-        // Find the first marker on/after dayStart by stepping from anchor.
-        let stepsToDayStart = (dayStart.timeIntervalSince(anchor) / cadence).rounded(.up)
-        var current = anchor.addingTimeInterval(stepsToDayStart * cadence)
-        var markers: [Date] = []
-        while current < dayEnd {
-            if current >= dayStart {
-                markers.append(current)
-            }
-            current = current.addingTimeInterval(cadence)
-        }
-        return markers
-    }
-}
-
-private struct FeedMarker: View {
-    let dayStart: Date
-    let markerDate: Date
-
-    var body: some View {
-        let y = TimelineMetrics.yOffset(for: markerDate, dayStart: dayStart)
-        HStack(spacing: 2) {
-            Image(systemName: "play.fill")
-                .resizable()
-                .frame(width: 6, height: 6)
-                .foregroundStyle(Color.relaySoftCream.opacity(0.55))
-            Text("feed")
-                .font(.system(size: 8))
-                .foregroundStyle(Color.relaySoftCream.opacity(0.55))
-        }
-        .padding(.leading, 2)
-        .frame(height: TimelineMetrics.halfHourHeight, alignment: .center)
-        .offset(y: y - TimelineMetrics.halfHourHeight / 2)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
 }
 
 // MARK: - Lane area
@@ -403,12 +319,7 @@ private struct LaneArea: View {
     let slices: TimelineViewModel.DaySlices
     let color: (Person) -> Color
     let editVM: EditViewModel
-    let forecastVM: ForecastViewModel
-    let forecastStore: any ProposedShiftStore
-    let blocks: [ForecastViewModel.RenderableBlock]
     let isToday: Bool
-    let selectedDay: Date
-    let onAddPast: () -> Void
 
     var body: some View {
         GeometryReader { geo in
@@ -432,26 +343,6 @@ private struct LaneArea: View {
                     editVM: editVM
                 )
                 if isToday {
-                    if !blocks.isEmpty {
-                        ForecastOverlayView(
-                            blocks: blocks,
-                            planDay: slices.day,
-                            now: Date(),
-                            laneWidth: laneWidth,
-                            color: color,
-                            onCycle: { startedAt, engineProposal in
-                                _ = try? forecastStore.cycle(
-                                    planDay: slices.day,
-                                    startedAt: startedAt,
-                                    currentEngineProposal: engineProposal
-                                )
-                            }
-                        )
-                    } else {
-                        ForecastEmptyState(onAddPast: onAddPast)
-                            .frame(width: geo.size.width)
-                            .position(x: geo.size.width / 2, y: TimelineMetrics.dayHeight / 2)
-                    }
                     NowLine(dayStart: slices.day, totalWidth: geo.size.width)
                 }
             }
