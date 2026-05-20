@@ -15,6 +15,12 @@
 //  `WidgetCenterRefresher`, so a logged session is reflected
 //  near-immediately regardless of where we sit in the timeline.
 //
+//  RELAY-10 — entries now carry the per-person display names so the
+//  widget renders the household's actual names instead of "Dave" /
+//  "Bethany." Names are read from the App Group `UserDefaults` suite
+//  written by `PersonNameSettings` in the app target. Empty values fall
+//  back to "Person A" / "Person B" for the pre-onboarding window.
+//
 
 import WidgetKit
 import SwiftUI
@@ -25,6 +31,8 @@ import SwiftData
 struct SleepDebtTimelineEntry: TimelineEntry {
     let date: Date
     let snapshot: SleepDebtSnapshot
+    let nameA: String
+    let nameB: String
 }
 
 // MARK: - TimelineProvider
@@ -35,29 +43,53 @@ struct SleepDebtTimelineProvider: TimelineProvider {
     static let entriesPerTimeline = 12                     // covers 1h
     static let reloadAfter: TimeInterval = 60 * 60         // 1h
 
+    /// UserDefaults keys shared with `PersonNameSettings.Keys` in the app
+    /// target. Duplicated here because the widget extension can't import
+    /// app-target code; treat both sides as the authoritative spec.
+    private static let nameAKey = "relay.person.nameA"
+    private static let nameBKey = "relay.person.nameB"
+
     func placeholder(in context: Context) -> SleepDebtTimelineEntry {
-        SleepDebtTimelineEntry(
+        let (nameA, nameB) = Self.resolvedNames()
+        return SleepDebtTimelineEntry(
             date: .now,
-            snapshot: SleepDebtSnapshot(date: .now, daveBalance: nil, bethanyBalance: nil)
+            snapshot: SleepDebtSnapshot(date: .now, personABalance: nil, personBBalance: nil),
+            nameA: nameA,
+            nameB: nameB
         )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SleepDebtTimelineEntry) -> Void) {
         let sessions = fetchRecentSessions(now: .now)
         let snap = SleepDebtSnapshotComputer.snapshot(sessions: sessions, at: .now)
-        completion(SleepDebtTimelineEntry(date: .now, snapshot: snap))
+        let (nameA, nameB) = Self.resolvedNames()
+        completion(SleepDebtTimelineEntry(date: .now, snapshot: snap, nameA: nameA, nameB: nameB))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SleepDebtTimelineEntry>) -> Void) {
         let now = Date()
         let sessions = fetchRecentSessions(now: now)
+        let (nameA, nameB) = Self.resolvedNames()
         let entries = (0..<Self.entriesPerTimeline).map { index in
             let entryDate = now.addingTimeInterval(Double(index) * Self.displayInterval)
             let snap = SleepDebtSnapshotComputer.snapshot(sessions: sessions, at: entryDate)
-            return SleepDebtTimelineEntry(date: entryDate, snapshot: snap)
+            return SleepDebtTimelineEntry(date: entryDate, snapshot: snap, nameA: nameA, nameB: nameB)
         }
         let reloadAt = now.addingTimeInterval(Self.reloadAfter)
         completion(Timeline(entries: entries, policy: .after(reloadAt)))
+    }
+
+    /// Resolve the configured names from the App Group suite. Empty stored
+    /// values fall through to `"Person A"` / `"Person B"` so a widget added
+    /// before onboarding completes still renders something legible.
+    private static func resolvedNames() -> (nameA: String, nameB: String) {
+        let defaults = UserDefaults(suiteName: WidgetAppGroup.identifier)
+        let storedA = defaults?.string(forKey: nameAKey) ?? ""
+        let storedB = defaults?.string(forKey: nameBKey) ?? ""
+        return (
+            storedA.isEmpty ? "Person A" : storedA,
+            storedB.isEmpty ? "Person B" : storedB
+        )
     }
 
     // MARK: - SwiftData read
@@ -90,13 +122,13 @@ struct SleepDebtEntryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             PersonDebtRow(
-                person: .dave,
-                balance: entry.snapshot.daveBalance,
+                name: entry.nameA,
+                balance: entry.snapshot.personABalance,
                 laneColor: .relayTerracotta
             )
             PersonDebtRow(
-                person: .bethany,
-                balance: entry.snapshot.bethanyBalance,
+                name: entry.nameB,
+                balance: entry.snapshot.personBBalance,
                 laneColor: .relaySoftPeach
             )
         }
@@ -106,7 +138,7 @@ struct SleepDebtEntryView: View {
 }
 
 private struct PersonDebtRow: View {
-    let person: Person
+    let name: String
     let balance: TimeInterval?
     let laneColor: Color
 
@@ -116,7 +148,7 @@ private struct PersonDebtRow: View {
                 Circle()
                     .fill(laneColor)
                     .frame(width: 8, height: 8)
-                Text(person.displayName)
+                Text(name)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.relayInk.opacity(0.7))
             }
@@ -128,7 +160,7 @@ private struct PersonDebtRow: View {
                 .minimumScaleFactor(0.7)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(person.displayName) sleep debt \(displayString)"))
+        .accessibilityLabel(Text("\(name) sleep debt \(displayString)"))
     }
 
     private var displayString: String {
@@ -150,26 +182,38 @@ struct RelayWidget: Widget {
                 .containerBackground(Color.relayCream, for: .widget)
         }
         .configurationDisplayName("Sleep Debt")
-        .description("How much sleep Dave and Bethany are short of an 8h/24h target.")
+        .description("How much sleep each parent is short of an 8h/24h target.")
         .supportedFamilies([.systemSmall])
     }
 }
 
 // MARK: - Preview
 
+/// Gallery preview names. Generic real-sounding names communicate
+/// "this is what it'll look like for your household" without
+/// presenting "Person A" placeholders that look broken in the gallery.
+private let galleryNameA = "Casey"
+private let galleryNameB = "Avery"
+
 #Preview(as: .systemSmall) {
     RelayWidget()
 } timeline: {
     SleepDebtTimelineEntry(
         date: .now,
-        snapshot: SleepDebtSnapshot(date: .now, daveBalance: -3 * 3600 - 12 * 60, bethanyBalance: -1 * 3600 - 45 * 60)
+        snapshot: SleepDebtSnapshot(date: .now, personABalance: -3 * 3600 - 12 * 60, personBBalance: -1 * 3600 - 45 * 60),
+        nameA: galleryNameA,
+        nameB: galleryNameB
     )
     SleepDebtTimelineEntry(
         date: .now,
-        snapshot: SleepDebtSnapshot(date: .now, daveBalance: nil, bethanyBalance: nil)
+        snapshot: SleepDebtSnapshot(date: .now, personABalance: nil, personBBalance: nil),
+        nameA: galleryNameA,
+        nameB: galleryNameB
     )
     SleepDebtTimelineEntry(
         date: .now,
-        snapshot: SleepDebtSnapshot(date: .now, daveBalance: 0, bethanyBalance: 1800)
+        snapshot: SleepDebtSnapshot(date: .now, personABalance: 0, personBBalance: 1800),
+        nameA: galleryNameA,
+        nameB: galleryNameB
     )
 }

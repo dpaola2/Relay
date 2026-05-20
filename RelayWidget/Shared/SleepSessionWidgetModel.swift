@@ -52,7 +52,7 @@ final class SleepSession {
     }
 
     var who: Person {
-        get { Person(rawValue: whoRaw) ?? .dave }
+        get { Person(rawValue: whoRaw) ?? .personA }
         set { whoRaw = newValue.rawValue }
     }
 
@@ -60,13 +60,28 @@ final class SleepSession {
 }
 
 enum Person: String, CaseIterable, Sendable {
-    case dave = "dave"
-    case bethany = "bethany"
+    case personA
+    case personB
 
-    var displayName: String {
+    /// Same defensive-decoder contract as the main-app copy. The widget
+    /// extension runs in its own process and can read a row before
+    /// `PersonEnumMigrator` has rewritten it, so accept both schemas.
+    init?(rawValue: String) {
+        switch rawValue {
+        case "personA", "dave": self = .personA
+        case "personB", "bethany": self = .personB
+        default: return nil
+        }
+    }
+
+    /// Last-resort placeholder for paths that don't yet have a real name
+    /// (gallery preview before any name is read; accessibility labels in
+    /// the `placeholder(in:)` snapshot). Real names ship in the entry —
+    /// see `SleepDebtTimelineEntry.nameA` / `.nameB`.
+    var placeholderName: String {
         switch self {
-        case .dave: return "Dave"
-        case .bethany: return "Bethany"
+        case .personA: return "Person A"
+        case .personB: return "Person B"
         }
     }
 }

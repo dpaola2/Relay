@@ -35,9 +35,11 @@ private struct ActiveSessionRow: View {
     let session: SleepSession
     let asOf: Date
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         HStack {
-            Text("\(session.who.displayName) sleeping")
+            Text("\(nameSettings.displayName(for: session.who)) sleeping")
                 .font(.headline)
             Spacer()
             Text(elapsedString(from: session.duration(asOf: asOf)))

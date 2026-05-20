@@ -43,7 +43,7 @@ final class SleepSession {
 
     /// Defensive fallback when storage is corrupt (Arch §1.3 + PRD §8).
     var who: Person {
-        get { Person(rawValue: whoRaw) ?? .dave }
+        get { Person(rawValue: whoRaw) ?? .personA }
         set { whoRaw = newValue.rawValue }
     }
 

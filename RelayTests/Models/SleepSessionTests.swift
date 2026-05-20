@@ -11,7 +11,7 @@
 //    - DAT-005-relaxed: per-person open invariant is enforced at the view-model
 //      and store layer, not in the model. The model itself only carries
 //      `endedAt: Date?` semantics.
-//    - PRD §8 edge case: `who` falls back to `.dave` if `whoRaw` is corrupt.
+//    - PRD §8 edge case: `who` falls back to `.personA` if `whoRaw` is corrupt.
 //
 //  All tests are expected to FAIL until M2 lands `Relay/Models/SleepSession.swift`
 //  and `Relay/Models/Person.swift`. Compile errors here ARE the M2 implementation
@@ -32,7 +32,7 @@ final class SleepSessionTests: XCTestCase {
 
         let s = SleepSession(
             id: id,
-            who: .bethany,
+            who: .personB,
             startedAt: started,
             endedAt: ended,
             note: "with Jo",
@@ -41,7 +41,7 @@ final class SleepSessionTests: XCTestCase {
         )
 
         XCTAssertEqual(s.id, id)
-        XCTAssertEqual(s.who, .bethany)
+        XCTAssertEqual(s.who, .personB)
         XCTAssertEqual(s.startedAt, started)
         XCTAssertEqual(s.endedAt, ended)
         XCTAssertEqual(s.note, "with Jo")
@@ -50,54 +50,54 @@ final class SleepSessionTests: XCTestCase {
     }
 
     func test_init_defaultsEndedAtToNil_forOpenSession() {
-        let s = SleepSession(who: .dave, startedAt: .now)
+        let s = SleepSession(who: .personA, startedAt: .now)
         XCTAssertNil(s.endedAt)
         XCTAssertNil(s.note)
     }
 
     func test_init_persistsWhoAsRawString() {
-        let dave = SleepSession(who: .dave, startedAt: .now)
-        let beth = SleepSession(who: .bethany, startedAt: .now)
-        XCTAssertEqual(dave.whoRaw, "dave")
-        XCTAssertEqual(beth.whoRaw, "bethany")
+        let a = SleepSession(who: .personA, startedAt: .now)
+        let b = SleepSession(who: .personB, startedAt: .now)
+        XCTAssertEqual(a.whoRaw, "personA")
+        XCTAssertEqual(b.whoRaw, "personB")
     }
 
     // MARK: - DAT-001: `who` bridge round-trip
 
     func test_whoGetter_returnsCorrespondingPersonForRawValue() {
-        let s = SleepSession(who: .dave, startedAt: .now)
-        XCTAssertEqual(s.who, .dave)
+        let s = SleepSession(who: .personA, startedAt: .now)
+        XCTAssertEqual(s.who, .personA)
 
-        s.whoRaw = "bethany"
-        XCTAssertEqual(s.who, .bethany)
+        s.whoRaw = "personB"
+        XCTAssertEqual(s.who, .personB)
     }
 
     func test_whoSetter_writesRawValueBack() {
-        let s = SleepSession(who: .dave, startedAt: .now)
-        s.who = .bethany
-        XCTAssertEqual(s.whoRaw, "bethany")
+        let s = SleepSession(who: .personA, startedAt: .now)
+        s.who = .personB
+        XCTAssertEqual(s.whoRaw, "personB")
 
-        s.who = .dave
-        XCTAssertEqual(s.whoRaw, "dave")
+        s.who = .personA
+        XCTAssertEqual(s.whoRaw, "personA")
     }
 
     /// PRD §8 + Architecture §1.3 — defensive fallback when storage is corrupt.
     func test_whoGetter_fallsBackToDave_whenRawValueIsCorrupt() {
-        let s = SleepSession(who: .bethany, startedAt: .now)
+        let s = SleepSession(who: .personB, startedAt: .now)
         s.whoRaw = "garbage_corrupt_value"
-        XCTAssertEqual(s.who, .dave, "Corrupt whoRaw should fall back to .dave per Arch §1.3")
+        XCTAssertEqual(s.who, .personA, "Corrupt whoRaw should fall back to .personA per Arch §1.3")
     }
 
     // MARK: - DAT-001: `isOpen` derivation
 
     func test_isOpen_isTrue_whenEndedAtIsNil() {
-        let s = SleepSession(who: .dave, startedAt: .now, endedAt: nil)
+        let s = SleepSession(who: .personA, startedAt: .now, endedAt: nil)
         XCTAssertTrue(s.isOpen)
     }
 
     func test_isOpen_isFalse_whenEndedAtIsSet() {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = SleepSession(who: .dave, startedAt: start, endedAt: start.addingTimeInterval(60))
+        let s = SleepSession(who: .personA, startedAt: start, endedAt: start.addingTimeInterval(60))
         XCTAssertFalse(s.isOpen)
     }
 
@@ -106,7 +106,7 @@ final class SleepSessionTests: XCTestCase {
     func test_duration_returnsEndedMinusStarted_forClosedSession() {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
         let end = start.addingTimeInterval(3_600) // 1h
-        let s = SleepSession(who: .dave, startedAt: start, endedAt: end)
+        let s = SleepSession(who: .personA, startedAt: start, endedAt: end)
 
         XCTAssertEqual(s.duration(asOf: .now), 3_600, accuracy: 0.001)
     }
@@ -115,7 +115,7 @@ final class SleepSessionTests: XCTestCase {
     /// `duration(asOf:)`. The reference date stands in for "now."
     func test_duration_usesReferenceDate_forOpenSession() {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = SleepSession(who: .dave, startedAt: start, endedAt: nil)
+        let s = SleepSession(who: .personA, startedAt: start, endedAt: nil)
         let refNow = start.addingTimeInterval(1_800) // 30m later
 
         XCTAssertEqual(s.duration(asOf: refNow), 1_800, accuracy: 0.001)
@@ -124,7 +124,7 @@ final class SleepSessionTests: XCTestCase {
     func test_duration_returnsZero_whenReferenceDateIsBeforeStart() {
         // Defensive: a clock-rewind shouldn't produce a negative duration.
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = SleepSession(who: .dave, startedAt: start, endedAt: nil)
+        let s = SleepSession(who: .personA, startedAt: start, endedAt: nil)
         let refBefore = start.addingTimeInterval(-100)
 
         XCTAssertEqual(s.duration(asOf: refBefore), 0, accuracy: 0.001)
@@ -137,7 +137,7 @@ final class SleepSessionTests: XCTestCase {
         // wall-clock DST jumps. PRD §8: "Date math is sufficient."
         let start = Date(timeIntervalSince1970: 1_710_046_800) // arbitrary instant
         let end = start.addingTimeInterval(8 * 3_600)
-        let s = SleepSession(who: .dave, startedAt: start, endedAt: end)
+        let s = SleepSession(who: .personA, startedAt: start, endedAt: end)
 
         XCTAssertEqual(s.duration(asOf: .now), 8 * 3_600, accuracy: 0.001)
     }

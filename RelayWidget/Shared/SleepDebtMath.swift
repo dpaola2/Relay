@@ -47,8 +47,8 @@ enum SleepDebtFormatter {
 
 struct SleepDebtSnapshot: Sendable, Equatable {
     let date: Date
-    let daveBalance: TimeInterval?
-    let bethanyBalance: TimeInterval?
+    let personABalance: TimeInterval?
+    let personBBalance: TimeInterval?
 }
 
 enum SleepDebtSnapshotComputer {
@@ -64,13 +64,13 @@ enum SleepDebtSnapshotComputer {
         window: TimeInterval = defaultWindow
     ) -> SleepDebtSnapshot {
         guard !sessions.isEmpty else {
-            return SleepDebtSnapshot(date: now, daveBalance: nil, bethanyBalance: nil)
+            return SleepDebtSnapshot(date: now, personABalance: nil, personBBalance: nil)
         }
         return SleepDebtSnapshot(
             date: now,
-            daveBalance: balance(for: .dave, sessions: sessions, now: now,
+            personABalance: balance(for: .personA, sessions: sessions, now: now,
                                  targetHoursPer24h: targetHoursPer24h, window: window),
-            bethanyBalance: balance(for: .bethany, sessions: sessions, now: now,
+            personBBalance: balance(for: .personB, sessions: sessions, now: now,
                                     targetHoursPer24h: targetHoursPer24h, window: window)
         )
     }

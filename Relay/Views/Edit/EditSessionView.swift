@@ -15,6 +15,7 @@ struct EditSessionView: View {
     let viewModel: EditViewModel
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.personNameSettings) private var nameSettings
     @State private var startedAt: Date
     @State private var endedAt: Date
     @State private var endedAtEnabled: Bool
@@ -35,7 +36,7 @@ struct EditSessionView: View {
             Section("Who") {
                 Picker("Person", selection: $who) {
                     ForEach(Person.allCases) { person in
-                        Text(person.displayName).tag(person)
+                        Text(nameSettings.displayName(for: person)).tag(person)
                     }
                 }
                 .pickerStyle(.segmented)

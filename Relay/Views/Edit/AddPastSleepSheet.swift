@@ -105,11 +105,13 @@ private struct AddPastSleepForm: View {
 private struct WhoSection: View {
     @Binding var who: Person
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         Section("Who") {
             Picker("Person", selection: $who) {
                 ForEach(Person.allCases) { person in
-                    Text(person.displayName).tag(person)
+                    Text(nameSettings.displayName(for: person)).tag(person)
                 }
             }
             .pickerStyle(.segmented)

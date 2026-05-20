@@ -57,8 +57,8 @@ final class EmptyStateAndEdgeTests: XCTestCase {
         sut.refresh()
 
         let slices = sut.slices(for: sut.today)
-        XCTAssertTrue(slices.dave.isEmpty)
-        XCTAssertTrue(slices.bethany.isEmpty)
+        XCTAssertTrue(slices.personA.isEmpty)
+        XCTAssertTrue(slices.personB.isEmpty)
     }
 
     // MARK: - EMPTY-totals
@@ -68,8 +68,8 @@ final class EmptyStateAndEdgeTests: XCTestCase {
         sut.refresh()
 
         for window: TimeInterval in [24 * hour, 48 * hour, 72 * hour] {
-            XCTAssertEqual(sut.total(for: .dave, over: window), 0)
-            XCTAssertEqual(sut.total(for: .bethany, over: window), 0)
+            XCTAssertEqual(sut.total(for: .personA, over: window), 0)
+            XCTAssertEqual(sut.total(for: .personB, over: window), 0)
         }
     }
 
@@ -87,14 +87,14 @@ final class EmptyStateAndEdgeTests: XCTestCase {
     func test_fiveDayOldSession_appearsOnItsDay_andOnEdit() throws {
         // RELAY-4: Day view exposes the trailing 7-day window (matches ADR-003).
         // A 5-day-old session must therefore be visible on the day it occurred.
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-5 * day))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-5 * day))
         try store.endSession(s, at: now.addingTimeInterval(-5 * day + hour))
 
         let timeline = TimelineViewModel(store: store, clock: clock)
         timeline.refresh()
         let fiveDaysAgo = Calendar.current.startOfDay(for: now.addingTimeInterval(-5 * day))
         let slices = timeline.slices(for: fiveDaysAgo)
-        XCTAssertEqual(slices.dave.count, 1, "5-day-old session appears on its calendar day")
+        XCTAssertEqual(slices.personA.count, 1, "5-day-old session appears on its calendar day")
 
         let edit = EditViewModel(store: store, clock: clock)
         edit.refresh()

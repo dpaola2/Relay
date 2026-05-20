@@ -111,9 +111,11 @@ private struct EditSessionList: View {
 private struct EditSessionRow: View {
     let session: SleepSession
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(session.who.displayName)
+            Text(nameSettings.displayName(for: session.who))
                 .font(.headline)
             HStack(spacing: 4) {
                 Text(session.startedAt, style: .date)

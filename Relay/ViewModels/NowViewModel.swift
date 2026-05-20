@@ -4,8 +4,8 @@
 //
 //  The Now-screen logging state machine (Arch §3.5). Per-person concurrency
 //  per ADR-001:
-//    - tap(person) with that person already open       → no-op (Q5 guard)
-//    - tap(person) with the OTHER person open          → opens this person too
+//    - tapPersonX with that person already open        → no-op (Q5 guard)
+//    - tapPersonX with the OTHER person open           → opens this person too
 //    - tapOnDuty with no open sessions                 → no-op (PRD NOW-006)
 //    - tapOnDuty with one or both open                 → closes ALL at clock.now
 //
@@ -36,17 +36,17 @@ nonisolated final class NowViewModel {
 
     // MARK: - Intents
 
-    /// "I'm sleeping" (Dave). No-op if Dave already has an open session
-    /// (ADR-001 Q5 idempotency guard).
-    func tapISleeping() throws {
-        try startIfIdle(for: .dave)
+    /// Start an open session for person A. No-op if person A already has one
+    /// open (ADR-001 Q5 idempotency guard).
+    func tapPersonA() throws {
+        try startIfIdle(for: .personA)
     }
 
-    /// "Bethany sleeping". No-op if Bethany already has an open session.
-    /// If Dave is open, his session stays open (ADR-001 Q6 — per-person
-    /// concurrency).
-    func tapBethanySleeping() throws {
-        try startIfIdle(for: .bethany)
+    /// Start an open session for person B. No-op if person B already has one
+    /// open. If person A is open, their session stays open (ADR-001 Q6 —
+    /// per-person concurrency).
+    func tapPersonB() throws {
+        try startIfIdle(for: .personB)
     }
 
     /// "On duty" — closes ALL open sessions at the current clock instant.

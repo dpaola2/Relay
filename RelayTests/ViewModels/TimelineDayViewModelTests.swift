@@ -56,13 +56,13 @@ final class TimelineDayViewModelTests: XCTestCase {
 
     func test_color_isDistinct_perPerson() {
         let sut = makeVM()
-        XCTAssertNotEqual(sut.color(for: .dave), sut.color(for: .bethany))
+        XCTAssertNotEqual(sut.color(for: .personA), sut.color(for: .personB))
     }
 
     func test_color_isStable_acrossInvocations() {
         let sut = makeVM()
-        XCTAssertEqual(sut.color(for: .dave), sut.color(for: .dave))
-        XCTAssertEqual(sut.color(for: .bethany), sut.color(for: .bethany))
+        XCTAssertEqual(sut.color(for: .personA), sut.color(for: .personA))
+        XCTAssertEqual(sut.color(for: .personB), sut.color(for: .personB))
     }
 
     // MARK: - today / earliestSelectableDay
@@ -86,35 +86,35 @@ final class TimelineDayViewModelTests: XCTestCase {
         let bStart = todayStart.addingTimeInterval(3 * hour)   // 03:00
         let bEnd = todayStart.addingTimeInterval(7 * hour)     // 07:00
 
-        let d = try store.startSession(for: .dave, at: dStart)
+        let d = try store.startSession(for: .personA, at: dStart)
         try store.endSession(d, at: dEnd)
-        let b = try store.startSession(for: .bethany, at: bStart)
+        let b = try store.startSession(for: .personB, at: bStart)
         try store.endSession(b, at: bEnd)
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: todayStart)
 
-        XCTAssertEqual(slices.dave.count, 1)
-        XCTAssertEqual(slices.bethany.count, 1)
-        XCTAssertEqual(slices.dave.first?.who, .dave)
-        XCTAssertEqual(slices.bethany.first?.who, .bethany)
+        XCTAssertEqual(slices.personA.count, 1)
+        XCTAssertEqual(slices.personB.count, 1)
+        XCTAssertEqual(slices.personA.first?.who, .personA)
+        XCTAssertEqual(slices.personB.first?.who, .personB)
     }
 
     func test_slices_sortsEachLaneChronologically() throws {
-        let a = try store.startSession(for: .dave, at: todayStart.addingTimeInterval(5 * hour))
+        let a = try store.startSession(for: .personA, at: todayStart.addingTimeInterval(5 * hour))
         try store.endSession(a, at: todayStart.addingTimeInterval(6 * hour))
-        let b = try store.startSession(for: .dave, at: todayStart.addingTimeInterval(1 * hour))
+        let b = try store.startSession(for: .personA, at: todayStart.addingTimeInterval(1 * hour))
         try store.endSession(b, at: todayStart.addingTimeInterval(2 * hour))
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: todayStart)
 
-        XCTAssertEqual(slices.dave.count, 2)
+        XCTAssertEqual(slices.personA.count, 2)
         XCTAssertLessThan(
-            slices.dave[0].visibleStart,
-            slices.dave[1].visibleStart,
+            slices.personA[0].visibleStart,
+            slices.personA[1].visibleStart,
             "Lane slices must be sorted chronologically"
         )
     }
@@ -122,15 +122,15 @@ final class TimelineDayViewModelTests: XCTestCase {
     func test_slices_excludesSessionsOutsideDay() throws {
         // Whole-day window: a session entirely the day before must not appear.
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
-        let s = try store.startSession(for: .dave, at: yesterdayStart.addingTimeInterval(2 * hour))
+        let s = try store.startSession(for: .personA, at: yesterdayStart.addingTimeInterval(2 * hour))
         try store.endSession(s, at: yesterdayStart.addingTimeInterval(4 * hour))
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: todayStart)
 
-        XCTAssertTrue(slices.dave.isEmpty)
-        XCTAssertTrue(slices.bethany.isEmpty)
+        XCTAssertTrue(slices.personA.isEmpty)
+        XCTAssertTrue(slices.personB.isEmpty)
     }
 
     // MARK: - Day-spanning sessions — render in BOTH days, clipped
@@ -141,15 +141,15 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
         let start = yesterdayStart.addingTimeInterval(22 * hour)
         let end = todayStart.addingTimeInterval(3 * hour)
-        let s = try store.startSession(for: .dave, at: start)
+        let s = try store.startSession(for: .personA, at: start)
         try store.endSession(s, at: end)
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: todayStart)
 
-        XCTAssertEqual(slices.dave.count, 1)
-        let slice = slices.dave[0]
+        XCTAssertEqual(slices.personA.count, 1)
+        let slice = slices.personA[0]
         XCTAssertEqual(slice.visibleStart, todayStart, "Spanning session clips to day start")
         XCTAssertEqual(slice.visibleEnd, end)
         XCTAssertEqual(slice.sessionID, s.id, "Slice still points at the underlying session")
@@ -161,15 +161,15 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterdayEnd = todayStart
         let start = yesterdayStart.addingTimeInterval(22 * hour)
         let end = todayStart.addingTimeInterval(3 * hour)
-        let s = try store.startSession(for: .dave, at: start)
+        let s = try store.startSession(for: .personA, at: start)
         try store.endSession(s, at: end)
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: yesterdayStart)
 
-        XCTAssertEqual(slices.dave.count, 1)
-        let slice = slices.dave[0]
+        XCTAssertEqual(slices.personA.count, 1)
+        let slice = slices.personA[0]
         XCTAssertEqual(slice.visibleStart, start)
         XCTAssertEqual(slice.visibleEnd, yesterdayEnd, "Spanning session clips to day end")
         XCTAssertEqual(slice.sessionID, s.id)
@@ -179,7 +179,7 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
         let start = yesterdayStart.addingTimeInterval(22 * hour)
         let end = todayStart.addingTimeInterval(3 * hour)
-        let s = try store.startSession(for: .bethany, at: start)
+        let s = try store.startSession(for: .personB, at: start)
         try store.endSession(s, at: end)
 
         let sut = makeVM()
@@ -187,11 +187,11 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterday = sut.slices(for: yesterdayStart)
         let today = sut.slices(for: todayStart)
 
-        XCTAssertEqual(yesterday.bethany.first?.sessionID, s.id)
-        XCTAssertEqual(today.bethany.first?.sessionID, s.id)
+        XCTAssertEqual(yesterday.personB.first?.sessionID, s.id)
+        XCTAssertEqual(today.personB.first?.sessionID, s.id)
         XCTAssertNotEqual(
-            yesterday.bethany.first?.id,
-            today.bethany.first?.id,
+            yesterday.personB.first?.id,
+            today.personB.first?.id,
             "Slice IDs must differ per-day so SwiftUI ForEach treats them as distinct rows"
         )
     }
@@ -202,14 +202,14 @@ final class TimelineDayViewModelTests: XCTestCase {
         // Open session started 90 minutes before now. Displayed on today, the
         // slice should end at clock.now.
         let start = now.addingTimeInterval(-90 * 60)
-        _ = try store.startSession(for: .dave, at: start)
+        _ = try store.startSession(for: .personA, at: start)
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: todayStart)
 
-        XCTAssertEqual(slices.dave.count, 1)
-        let slice = slices.dave[0]
+        XCTAssertEqual(slices.personA.count, 1)
+        let slice = slices.personA[0]
         XCTAssertTrue(slice.isOpen)
         XCTAssertEqual(slice.visibleStart, start)
         XCTAssertEqual(slice.visibleEnd, clock.now)
@@ -221,14 +221,14 @@ final class TimelineDayViewModelTests: XCTestCase {
         let twoDaysAgoStart = calendar.date(byAdding: .day, value: -2, to: todayStart)!
         let twoDaysAgoEnd = calendar.date(byAdding: .day, value: -1, to: todayStart)!
         let start = twoDaysAgoStart.addingTimeInterval(23 * hour)
-        _ = try store.startSession(for: .bethany, at: start)
+        _ = try store.startSession(for: .personB, at: start)
 
         let sut = makeVM()
         sut.refresh()
         let slices = sut.slices(for: twoDaysAgoStart)
 
-        XCTAssertEqual(slices.bethany.count, 1)
-        XCTAssertEqual(slices.bethany.first?.visibleEnd, twoDaysAgoEnd)
+        XCTAssertEqual(slices.personB.count, 1)
+        XCTAssertEqual(slices.personB.first?.visibleEnd, twoDaysAgoEnd)
     }
 
     // MARK: - nowAnchor(in:)
@@ -252,7 +252,7 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart)!
         let start = yesterdayStart.addingTimeInterval(22 * hour) // 22:00 yesterday
         let end = todayStart.addingTimeInterval(3 * hour)        // 03:00 today (5h total)
-        let s = try store.startSession(for: .dave, at: start)
+        let s = try store.startSession(for: .personA, at: start)
         try store.endSession(s, at: end)
 
         let sut = makeVM()
@@ -260,7 +260,7 @@ final class TimelineDayViewModelTests: XCTestCase {
         let yesterday = sut.slices(for: yesterdayStart)
         let today = sut.slices(for: todayStart)
 
-        XCTAssertEqual(yesterday.dave.first?.fullDuration, 5 * hour)
-        XCTAssertEqual(today.dave.first?.fullDuration, 5 * hour)
+        XCTAssertEqual(yesterday.personA.first?.fullDuration, 5 * hour)
+        XCTAssertEqual(today.personA.first?.fullDuration, 5 * hour)
     }
 }

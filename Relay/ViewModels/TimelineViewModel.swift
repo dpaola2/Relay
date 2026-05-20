@@ -36,11 +36,13 @@ nonisolated final class TimelineViewModel {
         let isOpen: Bool
     }
 
-    /// Per-person lanes for one calendar day, in chronological order.
+    /// Per-person lanes for one calendar day, in chronological order. Keyed
+    /// by `Person.personA` / `.personB`; the per-person display name is
+    /// supplied by `PersonNameSettings` at the view layer.
     struct DaySlices {
         let day: Date
-        let dave: [DaySlice]
-        let bethany: [DaySlice]
+        let personA: [DaySlice]
+        let personB: [DaySlice]
     }
 
     private let store: any SleepSessionStore
@@ -95,14 +97,14 @@ nonisolated final class TimelineViewModel {
     /// at that day's midnight rather than bleeding forward.
     func slices(for day: Date) -> DaySlices {
         guard let interval = calendar.dateInterval(of: .day, for: day) else {
-            return DaySlices(day: day, dave: [], bethany: [])
+            return DaySlices(day: day, personA: [], personB: [])
         }
         let dayStart = interval.start
         let dayEnd = interval.end
         let dayKey = Int(dayStart.timeIntervalSince1970)
 
-        var dave: [DaySlice] = []
-        var bethany: [DaySlice] = []
+        var personA: [DaySlice] = []
+        var personB: [DaySlice] = []
 
         for session in sessions {
             let rawEnd = session.endedAt ?? clock.now
@@ -121,14 +123,14 @@ nonisolated final class TimelineViewModel {
                 isOpen: session.isOpen
             )
             switch session.who {
-            case .dave: dave.append(slice)
-            case .bethany: bethany.append(slice)
+            case .personA: personA.append(slice)
+            case .personB: personB.append(slice)
             }
         }
 
-        dave.sort { $0.visibleStart < $1.visibleStart }
-        bethany.sort { $0.visibleStart < $1.visibleStart }
-        return DaySlices(day: dayStart, dave: dave, bethany: bethany)
+        personA.sort { $0.visibleStart < $1.visibleStart }
+        personB.sort { $0.visibleStart < $1.visibleStart }
+        return DaySlices(day: dayStart, personA: personA, personB: personB)
     }
 
     /// The current moment if it falls inside `day`'s calendar window. Used by
@@ -144,8 +146,8 @@ nonisolated final class TimelineViewModel {
     /// so the view doesn't reach into palette tokens directly.
     func color(for person: Person) -> Color {
         switch person {
-        case .dave: return .relayTerracotta
-        case .bethany: return .relaySoftPeach
+        case .personA: return .relayTerracotta
+        case .personB: return .relaySoftPeach
         }
     }
 }

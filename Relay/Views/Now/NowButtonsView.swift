@@ -7,25 +7,32 @@
 //  Decision 7) and forwards to the supplied closure. No confirmation
 //  dialogs (NOW-008). No animations >150ms (NOW-010).
 //
+//  RELAY-10 — button labels are name-aware. The first two read
+//  "<nameA> sleeping" / "<nameB> sleeping" so neither parent is the
+//  presumed operator. (The old "I'm sleeping" / "Bethany sleeping"
+//  copy assumed Dave was holding the phone.)
+//
 
 import SwiftUI
 
 struct NowButtonsView: View {
-    let onTapISleeping: () -> Void
-    let onTapBethanySleeping: () -> Void
+    let nameA: String
+    let nameB: String
+    let onTapPersonA: () -> Void
+    let onTapPersonB: () -> Void
     let onTapOnDuty: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
             NowPrimaryButton(
-                title: "I'm sleeping",
+                title: "\(nameA) sleeping",
                 systemImage: "moon.zzz.fill",
-                action: onTapISleeping
+                action: onTapPersonA
             )
             NowPrimaryButton(
-                title: "Bethany sleeping",
+                title: "\(nameB) sleeping",
                 systemImage: "moon.fill",
-                action: onTapBethanySleeping
+                action: onTapPersonB
             )
             NowPrimaryButton(
                 title: "On duty",

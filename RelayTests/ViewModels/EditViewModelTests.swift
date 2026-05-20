@@ -48,7 +48,7 @@ final class EditViewModelTests: XCTestCase {
 
     func test_listedSessions_includes6DayOldSession_whichIs_OutsideTimelineWindow() throws {
         // 6 days old — inside Edit's 7-day window but outside Timeline's 72h.
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-6 * day))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-6 * day))
         try store.endSession(s, at: now.addingTimeInterval(-6 * day + 3 * hour))
 
         sut.refresh()
@@ -59,7 +59,7 @@ final class EditViewModelTests: XCTestCase {
 
     func test_listedSessions_excludesSessionOlderThan7Days() throws {
         // 8 days old, ended 7.5 days ago — outside the 7-day window.
-        let s = try store.startSession(for: .bethany, at: now.addingTimeInterval(-8 * day))
+        let s = try store.startSession(for: .personB, at: now.addingTimeInterval(-8 * day))
         try store.endSession(s, at: now.addingTimeInterval(-7.5 * day))
 
         sut.refresh()
@@ -69,7 +69,7 @@ final class EditViewModelTests: XCTestCase {
     /// Arch §3.6 / ADR-003 consequence — a long session that started 8 days
     /// ago but ended 6 days ago overlaps the 7-day window and MUST be listed.
     func test_listedSessions_includesOverlappingSession_startingBeforeWindow() throws {
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-8 * day))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-8 * day))
         try store.endSession(s, at: now.addingTimeInterval(-6 * day))
 
         sut.refresh()
@@ -80,7 +80,7 @@ final class EditViewModelTests: XCTestCase {
     /// included (predicate uses `>=`).
     func test_listedSessions_includesSessionEndingExactlyAtCutoff() throws {
         let cutoff = now.addingTimeInterval(-7 * day)
-        let s = try store.startSession(for: .dave, at: cutoff.addingTimeInterval(-hour))
+        let s = try store.startSession(for: .personA, at: cutoff.addingTimeInterval(-hour))
         try store.endSession(s, at: cutoff)
 
         sut.refresh()
@@ -92,13 +92,13 @@ final class EditViewModelTests: XCTestCase {
     func test_row_exposesWhoStartEndDuration_forClosedSession() throws {
         let started = now.addingTimeInterval(-2 * hour)
         let ended = now.addingTimeInterval(-1 * hour)
-        let s = try store.startSession(for: .bethany, at: started)
+        let s = try store.startSession(for: .personB, at: started)
         try store.endSession(s, at: ended)
 
         sut.refresh()
         let row = sut.sessions.first!
 
-        XCTAssertEqual(row.who, .bethany)
+        XCTAssertEqual(row.who, .personB)
         XCTAssertEqual(row.startedAt, started)
         XCTAssertEqual(row.endedAt, ended)
         XCTAssertEqual(row.duration(asOf: now), hour, accuracy: 1.0)
@@ -106,7 +106,7 @@ final class EditViewModelTests: XCTestCase {
     }
 
     func test_row_marksOngoingSession_byNilEndedAt() throws {
-        _ = try store.startSession(for: .dave, at: now.addingTimeInterval(-30 * 60))
+        _ = try store.startSession(for: .personA, at: now.addingTimeInterval(-30 * 60))
 
         sut.refresh()
         let row = sut.sessions.first!
@@ -118,7 +118,7 @@ final class EditViewModelTests: XCTestCase {
     // MARK: - EDT-003 + EDT-004: edits persist
 
     func test_save_persistsNewStartAndEndTimes() throws {
-        let original = try store.startSession(for: .dave, at: now.addingTimeInterval(-3 * hour))
+        let original = try store.startSession(for: .personA, at: now.addingTimeInterval(-3 * hour))
         try store.endSession(original, at: now.addingTimeInterval(-2 * hour))
 
         let newStart = now.addingTimeInterval(-90 * 60)
@@ -133,7 +133,7 @@ final class EditViewModelTests: XCTestCase {
 
     /// PRD §8 + Arch §1.3 — endedAt < startedAt is rejected.
     func test_save_throws_whenEndBeforeStart() throws {
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-2 * hour))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-2 * hour))
         try store.endSession(s, at: now.addingTimeInterval(-1 * hour))
 
         XCTAssertThrowsError(
@@ -150,7 +150,7 @@ final class EditViewModelTests: XCTestCase {
     // MARK: - EDT-005 (Should): delete
 
     func test_delete_removesSessionFromList() throws {
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-2 * hour))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-2 * hour))
         try store.endSession(s, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
@@ -164,22 +164,22 @@ final class EditViewModelTests: XCTestCase {
     // MARK: - EDT-006 (Should): who reassignment
 
     func test_save_canReassignWho() throws {
-        let s = try store.startSession(for: .dave, at: now.addingTimeInterval(-2 * hour))
+        let s = try store.startSession(for: .personA, at: now.addingTimeInterval(-2 * hour))
         try store.endSession(s, at: now.addingTimeInterval(-1 * hour))
 
-        try sut.save(session: s, startedAt: nil, endedAt: nil, who: .bethany)
+        try sut.save(session: s, startedAt: nil, endedAt: nil, who: .personB)
 
         sut.refresh()
         let updated = sut.sessions.first(where: { $0.id == s.id })
-        XCTAssertEqual(updated?.who, .bethany)
+        XCTAssertEqual(updated?.who, .personB)
     }
 
     // MARK: - PRD §8 edge case: overlapping sessions are allowed
 
     func test_save_allowsEditsThatOverlapExistingSession() throws {
-        let s1 = try store.startSession(for: .dave, at: now.addingTimeInterval(-2 * hour))
+        let s1 = try store.startSession(for: .personA, at: now.addingTimeInterval(-2 * hour))
         try store.endSession(s1, at: now.addingTimeInterval(-1 * hour))
-        let s2 = try store.startSession(for: .bethany, at: now.addingTimeInterval(-90 * 60))
+        let s2 = try store.startSession(for: .personB, at: now.addingTimeInterval(-90 * 60))
         try store.endSession(s2, at: now.addingTimeInterval(-30 * 60))
 
         // Edit s1 to overlap s2 — should NOT throw (PRD §8: no overlap validation in v1).

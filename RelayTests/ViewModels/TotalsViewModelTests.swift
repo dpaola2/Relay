@@ -47,60 +47,60 @@ final class TotalsViewModelTests: XCTestCase {
 
     func test_total24h_sumsClosedSessions_inLast24h_forGivenPerson() throws {
         // Dave: 4h ending 2h ago (entirely inside 24h)
-        let d1 = try store.startSession(for: .dave, at: now.addingTimeInterval(-6 * hour))
+        let d1 = try store.startSession(for: .personA, at: now.addingTimeInterval(-6 * hour))
         try store.endSession(d1, at: now.addingTimeInterval(-2 * hour))
         // Dave: 1h ending 23h ago (inside 24h)
-        let d2 = try store.startSession(for: .dave, at: now.addingTimeInterval(-24 * hour))
+        let d2 = try store.startSession(for: .personA, at: now.addingTimeInterval(-24 * hour))
         try store.endSession(d2, at: now.addingTimeInterval(-23 * hour))
         // Bethany: 2h ending 1h ago — must NOT count toward Dave's total.
-        let b1 = try store.startSession(for: .bethany, at: now.addingTimeInterval(-3 * hour))
+        let b1 = try store.startSession(for: .personB, at: now.addingTimeInterval(-3 * hour))
         try store.endSession(b1, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
 
-        XCTAssertEqual(sut.total(for: .dave, over: 24 * hour), 5 * hour, accuracy: 1.0)
-        XCTAssertEqual(sut.total(for: .bethany, over: 24 * hour), 2 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 24 * hour), 5 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personB, over: 24 * hour), 2 * hour, accuracy: 1.0)
     }
 
     func test_total48h_aggregatesAcrossWiderWindow() throws {
         // Dave: 3h closed 30h ago (outside 24h, inside 48h)
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-33 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-33 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-30 * hour))
 
         sut.refresh()
 
-        XCTAssertEqual(sut.total(for: .dave, over: 24 * hour), 0, accuracy: 1.0, "Outside 24h")
-        XCTAssertEqual(sut.total(for: .dave, over: 48 * hour), 3 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 24 * hour), 0, accuracy: 1.0, "Outside 24h")
+        XCTAssertEqual(sut.total(for: .personA, over: 48 * hour), 3 * hour, accuracy: 1.0)
     }
 
     func test_total72h_aggregatesEvenWider() throws {
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-60 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-60 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-58 * hour))
 
         sut.refresh()
-        XCTAssertEqual(sut.total(for: .dave, over: 72 * hour), 2 * hour, accuracy: 1.0)
-        XCTAssertEqual(sut.total(for: .dave, over: 48 * hour), 0, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 72 * hour), 2 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 48 * hour), 0, accuracy: 1.0)
     }
 
     // MARK: - TOT-003: open sessions count elapsed-so-far
 
     func test_total24h_includesOpenSessionDurationToNow() throws {
         // Open Dave session started 2h ago.
-        _ = try store.startSession(for: .dave, at: now.addingTimeInterval(-2 * hour))
+        _ = try store.startSession(for: .personA, at: now.addingTimeInterval(-2 * hour))
 
         sut.refresh()
-        XCTAssertEqual(sut.total(for: .dave, over: 24 * hour), 2 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 24 * hour), 2 * hour, accuracy: 1.0)
     }
 
     func test_total24h_clipsSessionToWindow_whenStartedBeforeWindow() throws {
         // Closed Dave session: started 26h ago, ended 22h ago (i.e., 4h total,
         // but only 2h is inside the 24h window).
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-26 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-26 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-22 * hour))
 
         sut.refresh()
         XCTAssertEqual(
-            sut.total(for: .dave, over: 24 * hour),
+            sut.total(for: .personA, over: 24 * hour),
             2 * hour,
             accuracy: 1.0,
             "Sessions are clipped to the window for correct cumulative math"
@@ -111,10 +111,10 @@ final class TotalsViewModelTests: XCTestCase {
 
     func test_totals_areZero_whenNoSessionsExist() {
         sut.refresh()
-        XCTAssertEqual(sut.total(for: .dave, over: 24 * hour), 0, accuracy: 0.001)
-        XCTAssertEqual(sut.total(for: .dave, over: 48 * hour), 0, accuracy: 0.001)
-        XCTAssertEqual(sut.total(for: .dave, over: 72 * hour), 0, accuracy: 0.001)
-        XCTAssertEqual(sut.total(for: .bethany, over: 24 * hour), 0, accuracy: 0.001)
+        XCTAssertEqual(sut.total(for: .personA, over: 24 * hour), 0, accuracy: 0.001)
+        XCTAssertEqual(sut.total(for: .personA, over: 48 * hour), 0, accuracy: 0.001)
+        XCTAssertEqual(sut.total(for: .personA, over: 72 * hour), 0, accuracy: 0.001)
+        XCTAssertEqual(sut.total(for: .personB, over: 24 * hour), 0, accuracy: 0.001)
     }
 
     // MARK: - M6 edge: DST-spanning session
@@ -123,11 +123,11 @@ final class TotalsViewModelTests: XCTestCase {
         // 8 hours of absolute time, regardless of wall-clock DST jump.
         let dstStart = now.addingTimeInterval(-10 * hour)
         let dstEnd = dstStart.addingTimeInterval(8 * hour) // 2h ago
-        let d = try store.startSession(for: .dave, at: dstStart)
+        let d = try store.startSession(for: .personA, at: dstStart)
         try store.endSession(d, at: dstEnd)
 
         sut.refresh()
-        XCTAssertEqual(sut.total(for: .dave, over: 24 * hour), 8 * hour, accuracy: 1.0)
+        XCTAssertEqual(sut.total(for: .personA, over: 24 * hour), 8 * hour, accuracy: 1.0)
     }
 
     // MARK: - M6 edge: clock-rewind / negative duration safety
@@ -135,12 +135,12 @@ final class TotalsViewModelTests: XCTestCase {
     func test_total_isNonNegative_evenIfClockRewindsMidSession() throws {
         let original = now
         // Open session started in the future relative to a rewound clock.
-        _ = try store.startSession(for: .dave, at: original.addingTimeInterval(100))
+        _ = try store.startSession(for: .personA, at: original.addingTimeInterval(100))
         clock.currentDate = original // pretend clock rewound
 
         sut.refresh()
         XCTAssertGreaterThanOrEqual(
-            sut.total(for: .dave, over: 24 * hour),
+            sut.total(for: .personA, over: 24 * hour),
             0,
             "Defensive: clock-rewind must not produce negative cumulative"
         )
@@ -150,21 +150,21 @@ final class TotalsViewModelTests: XCTestCase {
 
     func test_sleepDebt_isTargetMinusActual_forGivenWindow() throws {
         // Dave slept 4h in the last 24h.
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-5 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-5 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
-        let debt = sut.sleepDebt(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let debt = sut.sleepDebt(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(debt, 4 * hour, accuracy: 1.0, "8h target - 4h actual = 4h debt")
     }
 
     func test_sleepDebt_isZero_whenActualMeetsOrExceedsTarget() throws {
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-9 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-9 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-0.5 * hour))
 
         sut.refresh()
-        let debt = sut.sleepDebt(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let debt = sut.sleepDebt(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(debt, 0, accuracy: 1.0, "Meeting target means no debt (not negative)")
     }
@@ -178,32 +178,32 @@ final class TotalsViewModelTests: XCTestCase {
 
     func test_sleepBalance_isNegative_whenActualBelowTarget() throws {
         // Dave slept 4h. Target 8h. Balance = 4h − 8h = −4h.
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-5 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-5 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
-        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let balance = sut.sleepBalance(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(balance, -4 * hour, accuracy: 1.0)
     }
 
     func test_sleepBalance_isZero_whenActualMeetsTargetExactly() throws {
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-9 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-9 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
-        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let balance = sut.sleepBalance(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(balance, 0, accuracy: 1.0, "Exactly on target reads as zero")
     }
 
     func test_sleepBalance_isPositive_whenActualExceedsTarget() throws {
         // Dave slept 9h. Target 8h. Balance = +1h.
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-10 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-10 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
-        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let balance = sut.sleepBalance(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(balance, 1 * hour, accuracy: 1.0)
     }
@@ -211,23 +211,23 @@ final class TotalsViewModelTests: XCTestCase {
     func test_sleepBalance_scalesTarget_byWindowProportionally() throws {
         // Over 48h with an 8h-per-24h target, the scaled target is 16h.
         // Dave slept 10h within the 48h window → balance = −6h.
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-30 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-30 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-20 * hour))
 
         sut.refresh()
-        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 48 * hour)
+        let balance = sut.sleepBalance(for: .personA, targetHoursPer24h: 8.0, window: 48 * hour)
 
         XCTAssertEqual(balance, -6 * hour, accuracy: 1.0)
     }
 
     func test_sleepDebt_isStill_max0_negativeBalance() throws {
         // Surplus case: balance is +1h, but sleepDebt() must remain floored at 0.
-        let d = try store.startSession(for: .dave, at: now.addingTimeInterval(-10 * hour))
+        let d = try store.startSession(for: .personA, at: now.addingTimeInterval(-10 * hour))
         try store.endSession(d, at: now.addingTimeInterval(-1 * hour))
 
         sut.refresh()
-        let debt = sut.sleepDebt(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
-        let balance = sut.sleepBalance(for: .dave, targetHoursPer24h: 8.0, window: 24 * hour)
+        let debt = sut.sleepDebt(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
+        let balance = sut.sleepBalance(for: .personA, targetHoursPer24h: 8.0, window: 24 * hour)
 
         XCTAssertEqual(debt, 0, accuracy: 1.0, "sleepDebt is floored regardless of surplus")
         XCTAssertGreaterThan(balance, 0, "sleepBalance preserves the surplus")

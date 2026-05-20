@@ -64,9 +64,14 @@ private struct DayTimelineContent: View {
     let editVM: EditViewModel
     @Binding var selectedDay: Date
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         VStack(spacing: 0) {
-            LaneHeader(color: timelineVM.color(for:))
+            LaneHeader(
+                color: timelineVM.color(for:),
+                name: nameSettings.displayName(for:)
+            )
             DayBody(
                 slices: timelineVM.slices(for: selectedDay),
                 color: timelineVM.color(for:),
@@ -145,6 +150,7 @@ private struct DayTimelineContent: View {
 /// whose without leaving the Day view.
 struct LaneHeader: View {
     let color: (Person) -> Color
+    let name: (Person) -> String
 
     struct Entry: Equatable {
         let person: Person
@@ -154,15 +160,19 @@ struct LaneHeader: View {
     }
 
     /// Pure data seam — unit tests assert on this instead of rendering SwiftUI.
-    static func entries(color: (Person) -> Color) -> [Entry] {
+    static func entries(
+        color: (Person) -> Color,
+        name: (Person) -> String
+    ) -> [Entry] {
         Person.allCases
             .sorted { $0.laneOrder < $1.laneOrder }
             .map { person in
-                Entry(
+                let label = name(person)
+                return Entry(
                     person: person,
-                    label: person.displayName,
+                    label: label,
                     color: color(person),
-                    accessibilityLabel: "\(person.displayName)'s lane, \(person.colorName)"
+                    accessibilityLabel: "\(label)'s lane, \(person.colorName)"
                 )
             }
     }
@@ -171,7 +181,7 @@ struct LaneHeader: View {
         HStack(spacing: 0) {
             // Gutter spacer so the lane columns line up with the hour grid below.
             Color.clear.frame(width: TimelineMetrics.gutterWidth)
-            ForEach(Self.entries(color: color), id: \.person) { entry in
+            ForEach(Self.entries(color: color, name: name), id: \.person) { entry in
                 HStack(spacing: 6) {
                     Circle()
                         .fill(entry.color)
@@ -200,8 +210,8 @@ private extension Person {
     /// Stable left-to-right placement in the Day-view lanes. Lower = leftmost.
     var laneOrder: Int {
         switch self {
-        case .dave: return 0
-        case .bethany: return 1
+        case .personA: return 0
+        case .personB: return 1
         }
     }
 
@@ -209,8 +219,8 @@ private extension Person {
     /// Kept in sync with the palette tokens in `Color+Palette.swift`.
     var colorName: String {
         switch self {
-        case .dave: return "terracotta"
-        case .bethany: return "peach"
+        case .personA: return "terracotta"
+        case .personB: return "peach"
         }
     }
 }
@@ -328,17 +338,17 @@ private struct LaneArea: View {
             ZStack(alignment: .topLeading) {
                 LaneGrid(laneWidth: laneWidth)
                 LaneSlices(
-                    lane: slices.dave,
+                    lane: slices.personA,
                     dayStart: slices.day,
-                    color: color(.dave),
+                    color: color(.personA),
                     laneIndex: 0,
                     laneWidth: laneWidth,
                     editVM: editVM
                 )
                 LaneSlices(
-                    lane: slices.bethany,
+                    lane: slices.personB,
                     dayStart: slices.day,
-                    color: color(.bethany),
+                    color: color(.personB),
                     laneIndex: 1,
                     laneWidth: laneWidth,
                     editVM: editVM
@@ -404,6 +414,8 @@ private struct SessionBlockButton: View {
     let dayStart: Date
     let editVM: EditViewModel
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         let y = TimelineMetrics.yOffset(for: slice.visibleStart, dayStart: dayStart)
         let h = max(6, TimelineMetrics.yOffset(for: slice.visibleEnd, dayStart: dayStart) - y)
@@ -430,7 +442,7 @@ private struct SessionBlockButton: View {
                         .padding(.top, 4)
                 }
             }
-            .accessibilityLabel(Text("\(slice.who.displayName) sleeping \(durationLabel(slice.fullDuration))"))
+            .accessibilityLabel(Text("\(nameSettings.displayName(for: slice.who)) sleeping \(durationLabel(slice.fullDuration))"))
     }
 
     private func durationLabel(_ interval: TimeInterval) -> String {

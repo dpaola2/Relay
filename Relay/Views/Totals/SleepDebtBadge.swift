@@ -21,6 +21,8 @@ struct SleepDebtBadge: View {
     /// or future per-person configuration.
     var targetHoursPer24h: Double = 8.0
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     private let window: TimeInterval = 24 * 3_600
 
     var body: some View {
@@ -46,8 +48,9 @@ struct SleepDebtBadge: View {
     }
 
     private func accessibilityLabel(for debt: TimeInterval) -> String {
-        if debt <= 0 { return "\(person.displayName) sleep target met." }
-        return "\(person.displayName) sleep debt \(formatHoursMinutes(debt))."
+        let name = nameSettings.displayName(for: person)
+        if debt <= 0 { return "\(name) sleep target met." }
+        return "\(name) sleep debt \(formatHoursMinutes(debt))."
     }
 
     private func formatHoursMinutes(_ interval: TimeInterval) -> String {

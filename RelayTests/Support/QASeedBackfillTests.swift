@@ -12,13 +12,13 @@
 //    - QA-backfill-2 — Seed creates at least two sessions older than 7 days
 //      (to confirm VAL-002 reach — they should NOT appear in the Edit list).
 //    - QA-backfill-3 — Seed creates at least one within-24h session for
-//      `.dave` (the DEF-001 sticky-Who anchor).
+//      `.personA` (the DEF-001 sticky-Who anchor).
 //    - QA-backfill-4 — Seed creates at least two within-7d sessions per person
 //      so Totals has meaningful 24/48/72h numbers immediately.
 //    - QA-backfill-5 — Idempotency: invoking the scenario twice produces the
 //      same final store state (Relay's seed contract per QASeed).
 //    - QA-backfill-6 — After seeding, `AddPastSleepViewModel.resolveDefaultWho`
-//      (the underlying DEF-001 derivation) returns `.dave` — confirms the
+//      (the underlying DEF-001 derivation) returns `.personA` — confirms the
 //      sticky path is exercised by the seed.
 //
 //  Wrapped in `#if DEBUG` matching `QASeedTests.swift` and `QASeed.swift` —
@@ -86,7 +86,7 @@ final class QASeedBackfillTests: XCTestCase {
         try seeder.seedBackfillCoverage(store: store, clock: clock)
 
         let within24hDave = store.allRowsForTesting.filter { row in
-            row.who == .dave && row.startedAt > now.addingTimeInterval(-24 * hour)
+            row.who == .personA && row.startedAt > now.addingTimeInterval(-24 * hour)
         }
         XCTAssertGreaterThanOrEqual(
             within24hDave.count, 1,
@@ -105,10 +105,10 @@ final class QASeedBackfillTests: XCTestCase {
 
         let cutoff = now.addingTimeInterval(-7 * day)
         let within7dDave = store.allRowsForTesting.filter {
-            $0.who == .dave && $0.startedAt >= cutoff
+            $0.who == .personA && $0.startedAt >= cutoff
         }
         let within7dBethany = store.allRowsForTesting.filter {
-            $0.who == .bethany && $0.startedAt >= cutoff
+            $0.who == .personB && $0.startedAt >= cutoff
         }
 
         XCTAssertGreaterThanOrEqual(within7dDave.count, 2,
@@ -151,11 +151,11 @@ final class QASeedBackfillTests: XCTestCase {
     }
 
     // ========================================================================
-    // MARK: - QA-backfill-6: sticky Who derivation lands on .dave
+    // MARK: - QA-backfill-6: sticky Who derivation lands on .personA
     // ========================================================================
 
     /// QA-backfill-6: after seeding, the DEF-001 derivation (used by
-    /// `AddPastSleepViewModel` at sheet-open) resolves `Who` to `.dave`.
+    /// `AddPastSleepViewModel` at sheet-open) resolves `Who` to `.personA`.
     /// We assert this by reading the latest-startedAt within-24h session
     /// directly — same selection rule `AddPastSleepViewModel` will use.
     func test_seedBackfillCoverage_stickyWhoDerivation_landsOnDave() throws {
@@ -166,7 +166,7 @@ final class QASeedBackfillTests: XCTestCase {
         let latest = recent.max(by: { $0.startedAt < $1.startedAt })
 
         XCTAssertNotNil(latest, "Need ≥1 within-24h session for sticky-Who anchor")
-        XCTAssertEqual(latest?.who, .dave, "QA-backfill-6: sticky-Who anchor must be Dave")
+        XCTAssertEqual(latest?.who, .personA, "QA-backfill-6: sticky-Who anchor must be Dave")
     }
 
     // MARK: - Helpers

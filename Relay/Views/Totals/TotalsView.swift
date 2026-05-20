@@ -65,10 +65,12 @@ private struct PersonTotalsCard: View {
     let viewModel: TotalsViewModel
     let windows: [(label: String, seconds: TimeInterval)]
 
+    @Environment(\.personNameSettings) private var nameSettings
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(person.displayName)
+                Text(nameSettings.displayName(for: person))
                     .font(.title2.weight(.semibold))
                 Spacer()
                 SleepDebtBadge(person: person, viewModel: viewModel)

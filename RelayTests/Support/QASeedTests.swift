@@ -53,8 +53,8 @@ final class QASeedTests: XCTestCase {
         try seeder.seed(store: store, clock: clock)
 
         let allSessions = try store.sessions(in: now.addingTimeInterval(-10 * day)...now.addingTimeInterval(day))
-        let daveClosed = allSessions.filter { $0.who == .dave && !$0.isOpen }
-        let bethanyClosed = allSessions.filter { $0.who == .bethany && !$0.isOpen }
+        let daveClosed = allSessions.filter { $0.who == .personA && !$0.isOpen }
+        let bethanyClosed = allSessions.filter { $0.who == .personB && !$0.isOpen }
 
         XCTAssertGreaterThanOrEqual(daveClosed.count, 2, "Happy path: ≥2 closed Dave sessions in 72h")
         XCTAssertGreaterThanOrEqual(bethanyClosed.count, 2, "Happy path: ≥2 closed Bethany sessions in 72h")

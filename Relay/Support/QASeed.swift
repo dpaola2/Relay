@@ -111,28 +111,28 @@ struct QASeed {
             // --- Happy path: 2 Dave + 2 Bethany closed sessions in last 72h ---
             ScenarioPlan(
                 scenario: "happy-path/dave-night-3",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-66 * hour),
                 endedAt: now.addingTimeInterval(-60 * hour),
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "happy-path/bethany-night-3",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-60 * hour),
                 endedAt: now.addingTimeInterval(-56 * hour),
                 note: "First long stretch since Jo arrived."
             ),
             ScenarioPlan(
                 scenario: "happy-path/dave-long-night-2",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-42 * hour),
                 endedAt: now.addingTimeInterval(-30 * hour - 30 * 60),
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "happy-path/bethany-night-1",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-18 * hour),
                 endedAt: now.addingTimeInterval(-13 * hour),
                 note: nil
@@ -141,7 +141,7 @@ struct QASeed {
             // --- Short session (<5 min) for duration rendering ---
             ScenarioPlan(
                 scenario: "duration/short-nap-dave",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-24 * hour),
                 endedAt: now.addingTimeInterval(-24 * hour + 3 * 60),
                 note: "Cat-nap interrupted by Jo."
@@ -150,7 +150,7 @@ struct QASeed {
             // --- 7-day window boundary: ~6 days old (inside Edit window) ---
             ScenarioPlan(
                 scenario: "window/inside-7d-bethany-6-days-old",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-6 * day - 2 * hour),
                 endedAt: now.addingTimeInterval(-6 * day + 4 * hour),
                 note: nil
@@ -159,7 +159,7 @@ struct QASeed {
             // --- 7-day window boundary: ~8 days old (outside Edit window) ---
             ScenarioPlan(
                 scenario: "window/outside-7d-dave-8-days-old",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-8 * day - 1 * hour),
                 endedAt: now.addingTimeInterval(-8 * day + 5 * hour),
                 note: nil
@@ -168,14 +168,14 @@ struct QASeed {
             // --- Concurrent open pair (ADR-001): both currently open ---
             ScenarioPlan(
                 scenario: "concurrent-open/dave-open-now",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-45 * 60),
                 endedAt: nil,
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "concurrent-open/bethany-open-now",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-20 * 60),
                 endedAt: nil,
                 note: nil
@@ -195,14 +195,14 @@ struct QASeed {
             // --- VAL-002 reach: two rows OLDER than 7d (must NOT show in Edit) ---
             ScenarioPlan(
                 scenario: "backfill/outside-7d-dave-9-days-old",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-9 * day),
                 endedAt: now.addingTimeInterval(-9 * day + 6 * hour),
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "backfill/outside-7d-bethany-10-days-old",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-10 * day),
                 endedAt: now.addingTimeInterval(-10 * day + 5 * hour),
                 note: nil
@@ -211,28 +211,28 @@ struct QASeed {
             // --- Totals reach: ≥2 within-7d per person ---
             ScenarioPlan(
                 scenario: "backfill/within-7d-dave-6-days-old",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-6 * day),
                 endedAt: now.addingTimeInterval(-6 * day + 7 * hour),
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "backfill/within-7d-bethany-6-days-old",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-6 * day + hour),
                 endedAt: now.addingTimeInterval(-6 * day + 7 * hour),
                 note: nil
             ),
             ScenarioPlan(
                 scenario: "backfill/within-7d-dave-3-days-old",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-3 * day),
                 endedAt: now.addingTimeInterval(-3 * day + 7 * hour),
                 note: "Long stretch — Jo slept through."
             ),
             ScenarioPlan(
                 scenario: "backfill/within-7d-bethany-3-days-old",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-3 * day + 30 * 60),
                 endedAt: now.addingTimeInterval(-3 * day + 5 * hour),
                 note: nil
@@ -243,7 +243,7 @@ struct QASeed {
             //     the Dave anchor below. ---
             ScenarioPlan(
                 scenario: "backfill/within-7d-bethany-36-hours-old",
-                who: .bethany,
+                who: .personB,
                 startedAt: now.addingTimeInterval(-36 * hour),
                 endedAt: now.addingTimeInterval(-28 * hour),
                 note: nil
@@ -252,7 +252,7 @@ struct QASeed {
             // --- DEF-001 sticky anchor: latest-startedAt within 24h is Dave ---
             ScenarioPlan(
                 scenario: "backfill/within-24h-dave-sticky-anchor",
-                who: .dave,
+                who: .personA,
                 startedAt: now.addingTimeInterval(-3 * hour),
                 endedAt: now.addingTimeInterval(-1 * hour),
                 note: "Pre-dawn shift — sticky-Who anchor."
@@ -269,7 +269,7 @@ struct QASeed {
     ) {
         let openSessions = created.filter { $0.isOpen }
         let openDescriptions = openSessions
-            .map { "\($0.who.displayName) since \($0.startedAt)" }
+            .map { "\($0.whoRaw) since \($0.startedAt)" }
             .joined(separator: ", ")
 
         print("[QASeed] Seeded \(created.count) sessions at clock.now=\(now).")

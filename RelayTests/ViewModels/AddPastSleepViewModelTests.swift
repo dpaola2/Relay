@@ -8,7 +8,7 @@
 //  powers the "Add Past Sleep" sheet:
 //
 //    - DEF-001 — sticky `Who` default derived from `store.sessions(in: last 24h)`,
-//                newest-first, with `.dave` cold-start (ADR-002).
+//                newest-first, with `.personA` cold-start (ADR-002).
 //    - DEF-002 / DEF-003 — `startedAt` defaults to yesterday 11pm; `endedAt`
 //                          defaults to today 7am in the injected `Calendar`.
 //    - DEF-004 — defaults are computed at VM-init (sheet-open), not at app launch.
@@ -150,43 +150,43 @@ final class AddPastSleepViewModelTests: XCTestCase {
     // ========================================================================
 
     /// DEF-001 cold-start: when the store has no sessions in the last 24h,
-    /// `who` defaults to `.dave`.
+    /// `who` defaults to `.personA`.
     func test_init_who_defaultsToDave_whenStoreEmpty() {
         let sut = makeSUT()
-        XCTAssertEqual(sut.who, .dave)
+        XCTAssertEqual(sut.who, .personA)
     }
 
     /// DEF-001 sticky: when the most-recent session within 24h belongs to
     /// Bethany, `who` defaults to Bethany.
     func test_init_who_isSticky_toBethany_whenBethanyHasRecentSession() throws {
         // Bethany started a session 1h ago — the only recent activity.
-        _ = try store.startSession(for: .bethany, at: now.addingTimeInterval(-1 * hour))
+        _ = try store.startSession(for: .personB, at: now.addingTimeInterval(-1 * hour))
 
         let sut = makeSUT()
-        XCTAssertEqual(sut.who, .bethany, "DEF-001 sticky: should follow the most recent within-24h `who`")
+        XCTAssertEqual(sut.who, .personB, "DEF-001 sticky: should follow the most recent within-24h `who`")
     }
 
     /// DEF-001 sticky: when both people have sessions in the last 24h,
     /// `who` follows the one with the latest `startedAt` (newest-first).
     func test_init_who_isSticky_toLatestStartedSession_acrossPeople() throws {
-        _ = try store.startSession(for: .dave, at: now.addingTimeInterval(-12 * hour))
-        _ = try store.startSession(for: .bethany, at: now.addingTimeInterval(-3 * hour))
+        _ = try store.startSession(for: .personA, at: now.addingTimeInterval(-12 * hour))
+        _ = try store.startSession(for: .personB, at: now.addingTimeInterval(-3 * hour))
 
         let sut = makeSUT()
-        XCTAssertEqual(sut.who, .bethany, "DEF-001: newest startedAt wins")
+        XCTAssertEqual(sut.who, .personB, "DEF-001: newest startedAt wins")
     }
 
     /// DEF-001 boundary: sessions older than 24h do NOT influence the default.
     func test_init_who_ignoresSessions_olderThan24Hours() throws {
         // 25h ago — outside the 24h sticky window.
-        _ = try store.startSession(for: .bethany, at: now.addingTimeInterval(-25 * hour))
+        _ = try store.startSession(for: .personB, at: now.addingTimeInterval(-25 * hour))
 
         let sut = makeSUT()
-        XCTAssertEqual(sut.who, .dave, "Sessions older than 24h are not sticky anchors")
+        XCTAssertEqual(sut.who, .personA, "Sessions older than 24h are not sticky anchors")
     }
 
     /// DEF-001 resilience: if `store.sessions(in:)` throws, `who` falls back
-    /// to `.dave` without crashing the VM init.
+    /// to `.personA` without crashing the VM init.
     func test_init_who_fallsBackToDave_whenStoreSessionsThrows() {
         let throwingStore = ThrowingSleepSessionStore()
         let sut = AddPastSleepViewModel(
@@ -194,7 +194,7 @@ final class AddPastSleepViewModelTests: XCTestCase {
             clock: clock,
             calendar: utcCalendar
         )
-        XCTAssertEqual(sut.who, .dave, "Throwing store must not crash; falls back to .dave")
+        XCTAssertEqual(sut.who, .personA, "Throwing store must not crash; falls back to .personA")
     }
 
     // ========================================================================
@@ -396,7 +396,7 @@ final class AddPastSleepViewModelTests: XCTestCase {
     /// to a Now-captured session.
     func test_save_persistsRowWithExactState() throws {
         let sut = makeSUT()
-        sut.who = .bethany
+        sut.who = .personB
         let start = now.addingTimeInterval(-5 * hour)
         let end = now.addingTimeInterval(-2 * hour)
         sut.startedAt = start
@@ -408,7 +408,7 @@ final class AddPastSleepViewModelTests: XCTestCase {
         let rows = store.allRowsForTesting
         XCTAssertEqual(rows.count, 1, "Exactly one row created")
         let row = rows[0]
-        XCTAssertEqual(row.who, .bethany)
+        XCTAssertEqual(row.who, .personB)
         XCTAssertEqual(row.startedAt, start)
         XCTAssertEqual(row.endedAt, end)
         XCTAssertEqual(row.note, "Long stretch.")
@@ -448,12 +448,12 @@ final class AddPastSleepViewModelTests: XCTestCase {
     /// independently.
     func test_save_doesNotShortCircuit_whenSamePersonHasOpenSession() throws {
         // Dave has an in-progress live session.
-        _ = try store.startSession(for: .dave, at: now.addingTimeInterval(-30 * 60))
+        _ = try store.startSession(for: .personA, at: now.addingTimeInterval(-30 * 60))
         let openCountBefore = try store.allOpenSessions().count
         XCTAssertEqual(openCountBefore, 1)
 
         let sut = makeSUT()
-        sut.who = .dave
+        sut.who = .personA
         // Backfill a closed session overlapping the open one.
         sut.startedAt = now.addingTimeInterval(-3 * hour)
         sut.endedAt = now.addingTimeInterval(-hour)
@@ -513,7 +513,7 @@ final class AddPastSleepViewModelTests: XCTestCase {
 // MARK: - Test-only doubles
 
 /// Store that throws on every read so we can prove DEF-001 resilience —
-/// `who` must default to `.dave` rather than crashing the VM init.
+/// `who` must default to `.personA` rather than crashing the VM init.
 private final class ThrowingSleepSessionStore: SleepSessionStore, @unchecked Sendable {
     struct BoomError: Error {}
 

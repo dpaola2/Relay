@@ -18,6 +18,7 @@ import SwiftData
 struct NowView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.widgetRefresher) private var widgetRefresher
+    @Environment(\.personNameSettings) private var nameSettings
 
     @State private var viewModel: NowViewModel?
     @State private var haptics: Haptics = Self.makeHaptics()
@@ -26,8 +27,10 @@ struct NowView: View {
         VStack(spacing: 24) {
             ActiveSessionsBanner(sessions: viewModel?.activeSessions ?? [])
             NowButtonsView(
-                onTapISleeping: { perform { try $0.tapISleeping() } },
-                onTapBethanySleeping: { perform { try $0.tapBethanySleeping() } },
+                nameA: nameSettings.displayName(for: .personA),
+                nameB: nameSettings.displayName(for: .personB),
+                onTapPersonA: { perform { try $0.tapPersonA() } },
+                onTapPersonB: { perform { try $0.tapPersonB() } },
                 onTapOnDuty: { perform { try $0.tapOnDuty() } }
             )
             Spacer()

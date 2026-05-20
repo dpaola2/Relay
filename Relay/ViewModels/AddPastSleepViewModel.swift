@@ -9,7 +9,7 @@
 //  - DEF-002 / DEF-003: defaults to yesterday 11pm → today 7am in the injected
 //                       calendar's zone, computed at init.
 //  - DEF-001 (ADR-002): sticky `Who` derived at sheet-open from
-//                       `store.sessions(in: last 24h)`, newest-first; `.dave`
+//                       `store.sessions(in: last 24h)`, newest-first; `.personA`
 //                       cold-start and on `throw`.
 //  - VAL-001..VAL-005: a single `validationError` priority chain drives both
 //                      Save enablement and the helper copy surfaced inline.
@@ -49,7 +49,7 @@ nonisolated final class AddPastSleepViewModel {
         let defaults = Self.defaults(now: clock.now, calendar: calendar)
         self.startedAt = defaults.startedAt
         self.endedAt = defaults.endedAt
-        self.who = (try? Self.resolveDefaultWho(store: store, now: clock.now)) ?? .dave
+        self.who = (try? Self.resolveDefaultWho(store: store, now: clock.now)) ?? .personA
     }
 
     // MARK: - Defaults (DEF-002, DEF-003, DEF-004)
@@ -83,7 +83,7 @@ nonisolated final class AddPastSleepViewModel {
 
     /// DEF-001 sticky `Who`: pick the `who` of the most-recent session whose
     /// `startedAt` falls inside the trailing 24-hour window. Cold-start and
-    /// throw paths both fall back to `.dave` (ADR-002).
+    /// throw paths both fall back to `.personA` (ADR-002).
     ///
     /// `store.sessions(in:)` uses overlap semantics (a session whose interval
     /// touches the range is returned), so we additionally clamp to `startedAt
@@ -95,7 +95,7 @@ nonisolated final class AddPastSleepViewModel {
         let dayAgo = now.addingTimeInterval(-24 * 3_600)
         let recent = try store.sessions(in: dayAgo...now)
             .filter { $0.startedAt >= dayAgo }
-        return recent.max(by: { $0.startedAt < $1.startedAt })?.who ?? .dave
+        return recent.max(by: { $0.startedAt < $1.startedAt })?.who ?? .personA
     }
 
     // MARK: - Derived (UI-005, VAL-001..VAL-005)

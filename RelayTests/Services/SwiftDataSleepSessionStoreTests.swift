@@ -42,25 +42,25 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
 
     func test_startSession_createsOpenSession_andReturnsIt() throws {
         let now = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: now)
+        let s = try sut.startSession(for: .personA, at: now)
 
-        XCTAssertEqual(s.who, .dave)
+        XCTAssertEqual(s.who, .personA)
         XCTAssertEqual(s.startedAt, now)
         XCTAssertNil(s.endedAt)
         XCTAssertTrue(s.isOpen)
 
-        let openForDave = try sut.openSession(for: .dave)
+        let openForDave = try sut.openSession(for: .personA)
         XCTAssertEqual(openForDave?.id, s.id)
     }
 
     func test_endSession_closesAtGivenTime() throws {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: start)
+        let s = try sut.startSession(for: .personA, at: start)
         let end = start.addingTimeInterval(3_600)
 
         try sut.endSession(s, at: end)
 
-        let fetched = try sut.openSession(for: .dave)
+        let fetched = try sut.openSession(for: .personA)
         XCTAssertNil(fetched, "Session should no longer appear as open after endSession")
 
         let allInRange = try sut.sessions(in: start...end)
@@ -70,13 +70,13 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
 
     func test_allOpenSessions_returnsBothPeople_whenBothAreSleeping() throws {
         let now = Date(timeIntervalSince1970: 1_780_000_000)
-        _ = try sut.startSession(for: .dave, at: now)
-        _ = try sut.startSession(for: .bethany, at: now.addingTimeInterval(60))
+        _ = try sut.startSession(for: .personA, at: now)
+        _ = try sut.startSession(for: .personB, at: now.addingTimeInterval(60))
 
         let open = try sut.allOpenSessions()
         XCTAssertEqual(open.count, 2)
-        XCTAssertTrue(open.contains { $0.who == .dave })
-        XCTAssertTrue(open.contains { $0.who == .bethany })
+        XCTAssertTrue(open.contains { $0.who == .personA })
+        XCTAssertTrue(open.contains { $0.who == .personB })
     }
 
     func test_sessions_inRange_includesOverlappingSessions() throws {
@@ -84,15 +84,15 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
         let oneHour: TimeInterval = 3_600
 
         // Session that ends just before the window — should be excluded.
-        let before = try sut.startSession(for: .dave, at: base - 3 * oneHour)
+        let before = try sut.startSession(for: .personA, at: base - 3 * oneHour)
         try sut.endSession(before, at: base - 2 * oneHour)
 
         // Session straddling the start of the window — should be included.
-        let straddle = try sut.startSession(for: .bethany, at: base - oneHour)
+        let straddle = try sut.startSession(for: .personB, at: base - oneHour)
         try sut.endSession(straddle, at: base + oneHour)
 
         // Open session inside the window — should be included.
-        _ = try sut.startSession(for: .dave, at: base + 2 * oneHour)
+        _ = try sut.startSession(for: .personA, at: base + 2 * oneHour)
 
         let range: ClosedRange<Date> = base...(base + 4 * oneHour)
         let results = try sut.sessions(in: range)
@@ -104,22 +104,22 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
 
     func test_update_setsFields_whenNonNilProvided() throws {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: start)
+        let s = try sut.startSession(for: .personA, at: start)
         let newStart = start.addingTimeInterval(60)
         let newEnd = start.addingTimeInterval(3_600)
 
-        try sut.update(s, startedAt: newStart, endedAt: .some(newEnd), who: .bethany, note: .some("revised"))
+        try sut.update(s, startedAt: newStart, endedAt: .some(newEnd), who: .personB, note: .some("revised"))
 
         XCTAssertEqual(s.startedAt, newStart)
         XCTAssertEqual(s.endedAt, newEnd)
-        XCTAssertEqual(s.who, .bethany)
+        XCTAssertEqual(s.who, .personB)
         XCTAssertEqual(s.note, "revised")
     }
 
     /// Double-optional contract: outer `nil` means "don't touch."
     func test_update_doesNotTouchEndedAt_whenOuterIsNil() throws {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: start)
+        let s = try sut.startSession(for: .personA, at: start)
         try sut.endSession(s, at: start.addingTimeInterval(3_600))
         let originalEnd = s.endedAt
 
@@ -132,7 +132,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
     /// a previously-closed session.
     func test_update_setsEndedAtToNil_whenOuterIsSomeNil() throws {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: start)
+        let s = try sut.startSession(for: .personA, at: start)
         try sut.endSession(s, at: start.addingTimeInterval(3_600))
 
         try sut.update(s, startedAt: nil, endedAt: .some(nil), who: nil, note: nil)
@@ -144,7 +144,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
     /// PRD §8 edge case + Arch §1.3 invariant.
     func test_update_throws_whenEndedAtPrecedesStartedAt() throws {
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: start)
+        let s = try sut.startSession(for: .personA, at: start)
         let badEnd = start.addingTimeInterval(-60)
 
         XCTAssertThrowsError(
@@ -157,23 +157,23 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
 
     func test_delete_removesSession() throws {
         let now = Date(timeIntervalSince1970: 1_780_000_000)
-        let s = try sut.startSession(for: .dave, at: now)
-        XCTAssertNotNil(try sut.openSession(for: .dave))
+        let s = try sut.startSession(for: .personA, at: now)
+        XCTAssertNotNil(try sut.openSession(for: .personA))
 
         try sut.delete(s)
 
-        XCTAssertNil(try sut.openSession(for: .dave))
+        XCTAssertNil(try sut.openSession(for: .personA))
     }
 
     // MARK: - DAT-store-2: per-person open invariant (relaxed per ADR-001)
 
     func test_openSession_forPerson_returnsOnlyThatPersonsOpenSession() throws {
         let now = Date(timeIntervalSince1970: 1_780_000_000)
-        _ = try sut.startSession(for: .dave, at: now)
-        _ = try sut.startSession(for: .bethany, at: now.addingTimeInterval(60))
+        _ = try sut.startSession(for: .personA, at: now)
+        _ = try sut.startSession(for: .personB, at: now.addingTimeInterval(60))
 
-        XCTAssertEqual(try sut.openSession(for: .dave)?.who, .dave)
-        XCTAssertEqual(try sut.openSession(for: .bethany)?.who, .bethany)
+        XCTAssertEqual(try sut.openSession(for: .personA)?.who, .personA)
+        XCTAssertEqual(try sut.openSession(for: .personB)?.who, .personB)
     }
 
     // MARK: - RELAY-9: widget refresh fires after every write
@@ -189,7 +189,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
             widgetRefresher: spy
         )
 
-        _ = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+        _ = try store.startSession(for: .personA, at: Date(timeIntervalSince1970: 1_780_000_000))
 
         XCTAssertEqual(spy.refreshCount, 1)
     }
@@ -201,7 +201,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
             widgetRefresher: spy
         )
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let session = try store.startSession(for: .dave, at: start)
+        let session = try store.startSession(for: .personA, at: start)
         XCTAssertEqual(spy.refreshCount, 1)
 
         try store.endSession(session, at: start.addingTimeInterval(3_600))
@@ -216,7 +216,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
             widgetRefresher: spy
         )
         let start = Date(timeIntervalSince1970: 1_780_000_000)
-        let session = try store.startSession(for: .dave, at: start)
+        let session = try store.startSession(for: .personA, at: start)
 
         try store.update(
             session,
@@ -235,7 +235,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
             context: ModelContext(container),
             widgetRefresher: spy
         )
-        let session = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+        let session = try store.startSession(for: .personA, at: Date(timeIntervalSince1970: 1_780_000_000))
 
         try store.delete(session)
 
@@ -247,7 +247,7 @@ final class SwiftDataSleepSessionStoreTests: XCTestCase {
         // need to thread it through. Smoke test: the default constructor still
         // works and writes still commit.
         let store = SwiftDataSleepSessionStore(context: ModelContext(container))
-        let session = try store.startSession(for: .dave, at: Date(timeIntervalSince1970: 1_780_000_000))
+        let session = try store.startSession(for: .personA, at: Date(timeIntervalSince1970: 1_780_000_000))
         XCTAssertNotNil(session.id)
     }
 }
