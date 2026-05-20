@@ -1,3 +1,32 @@
-# Xcode user-specific state — per-developer UI state, scheme management,
-# breakpoints, etc. Never useful to share.
+# ============================================================================
+# Xcode / SwiftPM artifacts
+# ============================================================================
+
+# Per-developer UI state, scheme management, breakpoints — never useful to share.
 xcuserdata/
+
+# Per-developer interface state file (sometimes lands outside xcuserdata/).
+*.xcuserstate
+
+# Xcode build outputs. Should never be committed.
+build/
+DerivedData/
+
+# Swift Package Manager local state.
+.swiftpm/
+.build/
+
+# ============================================================================
+# Code signing / secrets — defense in depth (none should exist in this repo)
+# ============================================================================
+
+# Provisioning profiles, certs, App Store Connect API keys. Never commit.
+*.mobileprovision
+*.cer
+*.p12
+*.p8
+AuthKey_*.p8
+
+# Env files.
+.env
+.env.*

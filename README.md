@@ -1,108 +1,160 @@
 # Relay
 
-> **Relay treats sleep as recovery and proposes tonight's split based on who's more depleted — so two tired adults don't have to negotiate at 3am.**
+> **A quiet sleep tracker for the newborn period. Two parents, two lanes, one screen. No streaks, no scoring, no notifications. Just the night you're in.**
 
-A personal iOS sleep-shift tracker for Dave + Bethany during Josephine's newborn period. Built during paternity leave, May 2026. Sideload-only — not on the App Store, never will be.
+Relay is an iOS app for two-parent households sharing overnight care during the first months after a newborn arrives. Tap once to start a sleep session. Tap again to end it. The math is honest — the deficit is the deficit.
 
-This is not a product. It's a tool for one couple, designed for one season.
+[Get Relay on the App Store](#) <!-- TODO: replace with live App Store URL after approval -->
 
 ---
 
-## Screens
+## Support & Contact
+
+**Email:** [dpaola2@gmail.com](mailto:dpaola2@gmail.com)
+
+For bug reports, please include:
+- Your iPhone model and iOS version
+- A description of what you did and what happened
+- A screenshot if relevant
+
+Replies usually within a day or two — this is a one-person project.
+
+---
+
+## What's on the screen
 
 ### Now — log a shift in one tap, half-conscious, in the dark
 
 ![Now tab](Screenshots/Now.png)
 
-Three big buttons that work one-handed at 3am: *I'm sleeping*, *Bethany sleeping*, *On duty*. Whichever session is open shows its running duration at the top. Tap once when you go down, tap *On duty* when you wake up. That's it.
+Two cards, one per parent. Tap **Start** when you go to bed, **Stop** when you wake up. Whichever session is open shows its running duration live. The whole app is designed to be operable one-handed in a dark room at 3am.
 
-### Timeline — yesterday's reality + tonight's plan, on one vertical day
+### Timeline — see the night you just had
 
 ![Timeline tab](Screenshots/Timeline.png)
 
-A Huckleberry-style vertical day view: hour rail down the left, two parallel lanes (Dave terracotta, Bethany soft peach), solid blocks for logged sleep above the now line, proposed shifts below it. Swipe between days. *Sleep is recovery* — the empty state explains why Relay needs data before it can propose anything useful.
+A vertical day view with the hour rail down the left and two parallel lanes — one for each parent, color-coded. Sleep blocks are positioned by start time and sized by duration. Swipe left or right to navigate between days; the app keeps the last 7 days of history.
 
 ### Totals — how depleted is each of you, right now
 
 ![Totals tab](Screenshots/Totals.png)
 
-Cumulative sleep over the last 24h / 48h / 72h, per person. A sleep-debt indicator surfaces whoever is more behind on rest. This is the data the Forecast proposal uses to decide who gets tonight's long block.
+Cumulative sleep over the last 24h and 48h, per person. A sleep-debt indicator surfaces whoever is more behind on rest.
 
-### Edit — fix what you forgot to tap, add what you forgot to log
+### Edit — fix what you forgot to tap
 
 ![Edit tab](Screenshots/Edit.png)
 
-A scrollable 7-day list of every session. Tap to adjust timestamps (you *will* forget to hit the button, and sessions will be off by 20-30 minutes routinely). Tap the `+` to add a past session you missed entirely — including backfilling the first two days of using the app, when the proposal has no data yet.
+A scrollable list of every session from the last 7 days. Tap a row to adjust its start/end times or delete it. Tap **+** to add a session you forgot to log in real time — including backfilling the first days of using the app.
 
-### Settings — seed test data, wipe the slate
+### Settings — configure names
 
 ![Settings tab](Screenshots/Settings.png)
 
-Debug-build affordances for QA: seed sample data, seed a specific Forecast scenario (auto-proposal, manual overrides, empty state), wipe everything. Lets us prove out edge cases without waiting for real 3am moments to reproduce them.
+Edit the display names for both parents. Names propagate everywhere — the Timeline lane headers, the Totals tab, the home-screen widget.
+
+### Home-screen widget
+
+A small (`systemSmall`) widget shows sleep debt at a glance for both parents. Add it from the home-screen widget gallery — long-press an empty area, tap the **+** in the top corner, search for Relay.
 
 ---
 
-## How it thinks — the seven Care Principles
+## What's deliberately not in Relay
 
-Relay's design is grounded in seven beliefs about the postpartum period. They're not in the app as a manifesto — they live in the algorithms and in a handful of quiet design moments (the "Why this split?" sheet, the empty states, the first-run card). They are the *why* underneath every feature.
+- **No streaks, badges, or scores.** Sleep isn't a game.
+- **No coaching messages.** Relay shows you the data and gets out of the way.
+- **No notifications or alarms.** The baby is already making noise.
+- **No turn-taking math.** Relay tracks who slept, not who's "winning."
+- **No baby tracking.** No feeds, diapers, or weight. Use a baby tracker (like Huckleberry) for that.
+- **No social features, no leaderboards.**
+- **No account, no sign-in.** Anonymous, local-device only.
+- **No HealthKit or Apple Watch import.** Manual logging only — the friction is intentional.
 
-1. **Sleep is recovery, not luxury.** Especially in the fourth trimester. Every hour is medicine.
-2. **Plan when clear. Trust the plan at 3am.** Decisions in extreme fatigue are systematically worse than decisions when rested.
+---
+
+## Philosophy — the seven Care Principles
+
+Relay's design is grounded in seven beliefs about the postpartum period. They live in the algorithms and in a few quiet design moments (the onboarding screen, the empty states). They are the *why* underneath every feature.
+
+1. **Sleep is recovery, not luxury.** Especially in the fourth trimester. Every hour matters.
+2. **Plan when clear. Trust the plan at 3am.** Decisions made in extreme fatigue are systematically worse than decisions made when rested.
 3. **Data over scorekeeping.** Both parents see the same numbers. Nobody is tracking the other.
-4. **The auto-proposal is the value statement.** Splits are based on present sleep debt — never on history of who has done more.
+4. **The longer block goes to whoever needs it more.** Splits are based on present sleep deficit — never on history of who has done more.
 5. **The plan is a starting place. Deviation is expected.** Newborn sleep is chaos. The plan is a tool, not a verdict.
 6. **One day at a time.** No streaks, no week views, no long-horizon goals. The fourth trimester is a season.
 7. **The tool proposes. You decide.** Relay surfaces the data and gets out of the way; it doesn't coach.
 
-Full strategy docs:
-- [Care Principles](../assistant/05-projects/relay/strategy/care-principles.md) — the *why*
-- [JTBD framework](../assistant/05-projects/relay/strategy/jtbd.md) — the five jobs Relay serves
+---
+
+## Privacy
+
+Relay collects no data. None.
+
+- All sleep data is stored locally on your device using Apple's SwiftData framework.
+- The app does not contact any server. There is no Relay backend.
+- The app does not include any third-party analytics, advertising, or tracking SDKs.
+- The app does not request any system permissions (no location, no contacts, no notifications).
+- The app does not access HealthKit, Calendar, Photos, or any other system data.
+
+The only thing that ever leaves your device is sleep data you optionally back up to **your own** iCloud account — and only if you turn that on in iOS Settings → iCloud → Apps using iCloud. Apple, not Relay, controls that backup. The Relay developer has no access to it.
 
 ---
 
-## What it deliberately is not
+## Frequently asked questions
 
-- Not a baby tracker (feeds, diapers, weight). Huckleberry already does that.
-- Not a sleep-quality scorer. No stages, no scores, no coaching.
-- Not a notifier or alarm. The phone is already making noise.
-- Not on the App Store. Sideload-only.
-- Not multi-couple, multi-baby, or generalized. One couple, one newborn, one season.
-- No HealthKit, no Apple Watch, no backend, no auth, no accounts.
+### Why only two parents? Can I add a third caregiver?
+
+Relay is built around the comparison of two adults sharing overnight care. Three lanes would change the layout, the math, and the mental model. Single-parent households and three-plus-caregiver households are real and worth serving, but they're not v1.
+
+### Why no notifications or alarms?
+
+Newborn parents already have a tiny human making all the noise required. Relay deliberately does nothing that would add to it.
+
+### Why no Apple Watch or HealthKit?
+
+Auto-detected sleep from a wearable is unreliable in the newborn period — short fragmented sessions, frequent waking, holding the baby. The "friction" of tapping is also the friction of *knowing* it happened, which matters more than the saved seconds. Future versions may revisit this.
+
+### Why no streaks or scores?
+
+See Care Principle 3. Sleep isn't a competition between two exhausted people.
+
+### Does Relay work on iPad or Apple Watch?
+
+iPhone only, for now. The interaction model is designed around one-handed use of a phone, which doesn't map cleanly to either of those.
+
+### Does my data sync between phones?
+
+iCloud backup of your local data is supported (via iOS's standard SwiftData + CloudKit integration). Multi-device sync — where both parents see the same data in real time on their own phones — is on the roadmap but not in v1.0. For now, one device per household holds the data.
+
+### Can I export my data?
+
+Not in v1.0. If you want this, email and tell me — it's a candidate for a future version.
+
+### I lost my sleep data after reinstalling. Is it gone?
+
+If you had iCloud backup enabled in iOS Settings, your data should restore when you re-install and sign in to the same iCloud account. If you did not have iCloud backup enabled, the data was stored only on the device and is no longer recoverable. Sorry.
+
+### Why does my newborn ever sleep?
+
+This question is outside the scope of Relay.
 
 ---
 
-## Stack
+## Known limitations
 
-- SwiftUI + SwiftData (local persistence)
-- iPhone-only, dark theme, single-player on Dave's phone for v1
-- One entity: `SleepSession { who, startedAt, endedAt, note }` (+ `ProposedShift` for Forecast)
-- No backend, no analytics, no telemetry
-- ~86 tests + Forecast/Backfill/Palette/Timeline additions, TDD throughout
-
-## Status (as of 2026-05-17)
-
-Shipped to Dave's phone:
-
-| Version | Pitch | What landed |
-|---|---|---|
-| v1.0 | RELAY-1 | Now / Timeline (horizontal) / Totals / Edit, sleep-debt math |
-| v1.1 | RELAY-2 + RELAY-3 | Backfill sheet + warm palette (cream / terracotta / ink) |
-| v1.2 | RELAY-4 | Vertical Timeline (Huckleberry-style Day view, two lanes) |
-| v1.3 | RELAY-5 | Forecast — auto-proposed 18h shift plan, "Why this split?" affordance, Care Principles surfaced in empty state and first-run card |
-
-Backlog: RELAY-6 (seconds tick on Now banner — live-tracking affordance, chore).
-
-## Build & sideload
-
-Open `Relay.xcodeproj` in Xcode. Build target: iPhone, signed with personal developer team. Sideload via Xcode → physical device. No TestFlight, no App Store metadata.
-
-In-repo engineering conventions: `CLAUDE.md`.
+- **Single device only.** v1.0 stores data on one device. If both parents want to view the data, they need to look at the same phone.
+- **No data export.** v1.0 has no export feature.
+- **English only.** v1.0 ships in English. Other languages are a future consideration.
+- **iPhone only.** No iPad or Apple Watch app.
 
 ---
 
-## Cross-references
+## Made by
 
-- WCP namespace: `RELAY` (work items + pitches + artifacts)
-- Strategy: [Care Principles](../assistant/05-projects/relay/strategy/care-principles.md) + [JTBD](../assistant/05-projects/relay/strategy/jtbd.md)
-- Project hub: [Relay in Dave's OS](../assistant/05-projects/relay/_index.md)
-- Repo: this directory (`~/projects/Relay`)
+Relay is a one-person project, built during paternity leave in 2026. Made with care for parents in the hardest months.
+
+If Relay helped you, the best thank-you is to mention it to another set of newborn parents.
+
+---
+
+*Relay does not provide medical advice. Sleep deprivation in the postpartum period can have serious health consequences for both parents and infants. If you are struggling, please reach out to your healthcare provider.*

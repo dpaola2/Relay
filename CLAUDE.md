@@ -1,6 +1,6 @@
 # Relay
 
-Relay is an iOS sleep-shift tracker that Dave and Bethany use during the newborn period (Josephine, born 2026-05-14). Single-player v1 on Dave's phone — no App Store, no backend, no auth. Sideload only.
+Relay is an iOS sleep-shift tracker that Dave and Bethany use during the newborn period (Josephine, born 2026-05-14). Single-player v1 on Dave's phone — no backend, no auth. Distributed via TestFlight today; wider release path open but unscheduled.
 
 - **WCP namespace:** `RELAY` — check there before starting non-trivial work
 - **Founding pitch:** WCP work item `RELAY-1`, artifact `pitch.md`
@@ -15,7 +15,7 @@ These are the founding constraints. If a change requires breaking one of them, s
 - **No HealthKit / Watch.** Manual entry only. The user is half-asleep tapping a big button in the dark.
 - **No notifications.** Jo is already making noise.
 - **Tiny data model.** One entity (`SleepSession`). Resist adding new entities — most "features" should be views over the same table.
-- **Sideload only.** No TestFlight, no App Store, no marketing copy, no privacy labels.
+- **Distribution: TestFlight first, wider release later.** v1.5.0 (RELAY-9) moved off pure-sideload to TestFlight; broader release (App Store or otherwise) is an open path, not currently scheduled. Implications: every shipped build must be App-Review-clean (real bundle ID, real entitlements, proper signing) and every `MARKETING_VERSION + CURRENT_PROJECT_VERSION` pair must be unique and monotonic across the TestFlight track. Privacy labels / App Store metadata stay out of scope until a wider-release pitch lands.
 - **Appetite is finite.** One-week paternity-leave build. Out-of-scope work goes back to the WCP `RELAY` backlog, not into the current branch.
 
 ## Stack & Platform Settings
@@ -158,7 +158,7 @@ Defer this structure until the second or third file is added — don't pre-creat
 
 ## Versioning
 
-Always bump version and build numbers when shipping a feature, fix, or chore that lands on a sideload — don't wait to be asked. The two fields live in `Relay.xcodeproj/project.pbxproj`, with four occurrences each (Debug + Release for both the Relay and RelayTests targets); update all four for both fields so the app and test bundle stay in lockstep.
+Always bump version and build numbers when shipping a feature, fix, or chore that lands on TestFlight — don't wait to be asked. The two fields live in `Relay.xcodeproj/project.pbxproj`, with **six occurrences each** since RELAY-9 added the widget extension (Debug + Release for each of `Relay`, `RelayTests`, `RelayWidgetExtension`); update all six for both fields so the app, test bundle, and widget extension stay in lockstep. `CFBundleVersion` mismatch between the app and the embedded widget extension triggers a build warning *and* App Review rejects the build, so this is no longer just a nicety.
 
 - **`MARKETING_VERSION`** is semver. Treat the pitch's scope as the signal:
   - **Major** (`x.0.0`) — only when an explicit project-shape change happens (e.g., adding a second device, moving off SwiftData). Never bump major as part of normal feature work.
@@ -174,7 +174,7 @@ Always bump version and build numbers when shipping a feature, fix, or chore tha
 - **Run the build before committing.** A broken build wastes the next session's first 10 minutes.
 - **Don't push without explicit ask.** This repo is local-only by default.
 - **No secrets in source.** (None should exist — there's no backend.)
-- **Bump the version + build number with the change.** See §"Versioning" above. Forgetting is the second-most-common reason a sideload feels stuck on an old build.
+- **Bump the version + build number with the change.** See §"Versioning" above. Forgetting is the second-most-common reason a TestFlight build looks like it didn't ship — App Store Connect silently rejects duplicate-build uploads.
 
 ## What's Out of Scope
 
@@ -186,7 +186,7 @@ If any of the below is requested, push back or surface a trade-off first:
 - Notifications / alarms
 - Multi-baby or multi-couple support
 - Auth / accounts / user management
-- App Store readiness (icon polish, marketing copy, privacy labels)
+- Wider-release polish (1024×1024 app icon, marketing copy, screenshots, privacy labels). TestFlight runs on a placeholder icon for now; a wider-release pitch is when this becomes in-scope.
 - Sync via anything other than CloudKit (and that's a v2 concern)
 - Sleep coaching or AI-driven recommendations
 
@@ -225,7 +225,7 @@ If any of the below is requested, push back or surface a trade-off first:
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| iOS | Active | iOS 26.5 deployment target, iPhone-only in practice. Sideload-only — no TestFlight, no App Store. |
+| iOS | Active | iOS 26.5 deployment target, iPhone-only in practice. Distribution: **TestFlight** (active). Wider release (App Store or alt-store) is open but unscheduled. |
 
 ### Framework & Stack
 
@@ -266,11 +266,11 @@ If any of the below is requested, push back or surface a trade-off first:
 
 | Guardrail | Rule |
 |-----------|------|
-| **Production access** | Agents NEVER have production access. Sideload only — no signing keys, no distribution. |
+| **Production access** | Agents NEVER hold signing keys, App Store Connect API keys, or TestFlight upload credentials. Builds + archive happen locally; Dave uploads to TestFlight himself. |
 | **Default branch** | Never commit or merge directly to `main`. |
 | **Push** | Never push without explicit user request. This repo is local-only by default. |
 | **Destructive operations** | No SwiftData migration that drops data without human approval. No mass-delete `Relay/` files. |
-| **Project shape** | Do NOT relax the founding constraints in §"Project Shape" (single-player, no backend, no HealthKit, no notifications, one entity, sideload). Surface the trade-off first. |
+| **Project shape** | Do NOT relax the founding constraints in §"Project Shape" (single-player, no backend, no HealthKit, no notifications, one entity, TestFlight-or-narrower distribution). Surface the trade-off first. |
 | **Actor isolation** | Test target MUST NOT inherit `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. Service protocols and view models use `nonisolated`. Mocks use `@unchecked Sendable`. |
 | **Schema registration** | Every new `@Model` must be added to the `Schema` array in `RelayApp.swift`. |
 | **Test-target file inclusion** | `RelayTests/` is a `PBXFileSystemSynchronizedRootGroup` like `Relay/` — adding a `.swift` under it auto-includes it. Per-milestone gating uses `EXCLUDED_SOURCE_FILE_NAMES` (glob form `$(SRCROOT)/RelayTests/<subdir>/*`) in the `RelayTests` target's build settings. M1 excludes `Mocks/`, `Models/`, `Services/`, `Support/`, `ViewModels/`; each subsequent milestone removes the relevant entry. Editing this list is the unblock when a new test file refuses to compile. |
