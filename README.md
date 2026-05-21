@@ -90,6 +90,8 @@ Relay's design is grounded in seven beliefs about the postpartum period. They li
 
 Relay collects no data. None.
 
+→ Read the full [Privacy Policy](./privacy.md) for the formal version.
+
 - All sleep data is stored locally on your device using Apple's SwiftData framework.
 - The app does not contact any server. There is no Relay backend.
 - The app does not include any third-party analytics, advertising, or tracking SDKs.
